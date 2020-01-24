@@ -1,0 +1,14 @@
+{
+  "name": "MirroGo",
+  "keywords": "mirror,esp32,odroid",
+  "description": "A library to mirror Go on WiFi Web Interface",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/scpcom/MirrorGo.git"
+  },
+  "version": "3.0.0",
+  "license": "MIT",
+  "frameworks": "arduino",
+  "platforms": ["atmelavr", "ststm32", "espressif8266","espressif32","samd"]
+}

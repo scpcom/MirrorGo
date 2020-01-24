@@ -1,0 +1,7 @@
+MirrorGo    KEYWORD1
+LCDMirror   KEYWORD1
+SpkMirror   KEYWORD1
+BtnMirror   KEYWORD1
+BatMirror   KEYWORD1
+LedMirror   KEYWORD1
+WiFiWeb     KEYWORD1
