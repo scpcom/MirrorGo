@@ -11,10 +11,12 @@ What it does:
 
 Prepare:
 
-1. Install AsyncTCP, ESPAsyncTCP and ESPAsyncWebServer
+1. Setup ODROID-GO on Arduino IDE (https://wiki.odroid.com/odroid_go/arduino/01_arduino_setup)
+
+2. Install AsyncTCP, ESPAsyncTCP and ESPAsyncWebServer
 https://github.com/me-no-dev/ESPAsyncWebServer
 
-2. Install MirrorGo
+3. Install MirrorGo
 ```
 cd ~/Arduino/libraries
 git clone https://github.com/scpcom/MirrorGo.git
