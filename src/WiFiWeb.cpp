@@ -1690,9 +1690,14 @@ void handleRoot(AsyncWebServerRequest *request) {
   String entryName = "";
   String entryPath = "";
   String tree = "";
+  size_t c_len = 0;
   bool emptyFolder = true;
   bool bigFolder = false;
   bool shortUrl = false;
+  MemInfo memnow;
+  size_t treeResvd = 24576;
+  size_t pageResvd = treeResvd+8192;
+
 /*
   Serial.print("path:");
   Serial.println(directory);
@@ -1718,9 +1723,41 @@ void handleRoot(AsyncWebServerRequest *request) {
   Serial.print("lastElement:");
   Serial.println(lastElement);
 */  
+
   if (directory != "/") {
   File dir = SD.open(directory);
+
+  FillMemInfo(&memnow);
   
+  Serial.print("MaxAlloc: ");
+  Serial.print((int32_t)memnow.Heap.MaxAlloc);
+  Serial.print(" Free: ");
+  Serial.println((int32_t)memnow.Heap.Free);
+
+  pageResvd = memnow.Heap.MaxAlloc/2;
+  if (pageResvd > 65534-4096)
+    pageResvd = 65534-4096;
+  treeResvd = pageResvd-4096-1024;
+  pageResvd = treeResvd+8192;
+
+  if (!tree.reserve(treeResvd)) {
+    treeResvd -= 24576;
+    pageResvd = treeResvd+8192;
+  }
+  if (!tree.reserve(treeResvd)) {
+    treeResvd -= 24576;
+    pageResvd = treeResvd+8192;
+  }
+
+  FillMemInfo(&memnow);
+
+  Serial.print("Tree reserved: ");
+  Serial.print(treeResvd);
+  Serial.print(" MaxAlloc: ");
+  Serial.print((int32_t)memnow.Heap.MaxAlloc);
+  Serial.print(" Free: ");
+  Serial.println((int32_t)memnow.Heap.Free);
+
   while (true) {
     File entry =  dir.openNextFile();
 
@@ -1765,8 +1802,7 @@ void handleRoot(AsyncWebServerRequest *request) {
       }
       
       tree += F("</tr>\n");
-      
-      emptyFolder = false;
+     
     } else {
       tree += F("<tr>");
       tree += F("<td data-value=\"");
@@ -1804,16 +1840,28 @@ void handleRoot(AsyncWebServerRequest *request) {
       }
 
       tree += F("</tr>\n");
-      
-      emptyFolder = false;
     }
+
+    emptyFolder = false;
+
     entry.close();
 
-    if (tree.length() > 24576) {
+    if (tree.length() >= treeResvd) {
       bigFolder = true;
       break;
     }
   }
+
+  FillMemInfo(&memnow);
+
+  Serial.print("Tree: ");
+  Serial.print(tree.length());
+  Serial.print(" MaxAlloc: ");
+  Serial.print((int32_t)memnow.Heap.MaxAlloc);
+  Serial.print(" Free: ");
+  Serial.println((int32_t)memnow.Heap.Free);
+
+  c_len = tree.length();
 
   } else {
     entryName = getLastElement(WifiWebAppData);
@@ -1885,6 +1933,21 @@ void handleRoot(AsyncWebServerRequest *request) {
 
 
   String webpage = "";
+
+  if (c_len) {
+    if (!webpage.reserve(pageResvd)) {
+      Serial.println("Page reserve failed.");
+    }
+
+    FillMemInfo(&memnow);
+
+    Serial.print("Page reserved: ");
+    Serial.print(pageResvd);
+    Serial.print(" MaxAlloc: ");
+    Serial.print((int32_t)memnow.Heap.MaxAlloc);
+    Serial.print(" Free: ");
+    Serial.println((int32_t)memnow.Heap.Free);
+  }
 
   webpage += F(header);
   if (directory == "/") {
@@ -1972,15 +2035,16 @@ void handleRoot(AsyncWebServerRequest *request) {
   webpage += F("</thead>\n");
 
   webpage += F("<tbody id=\"tbody\">\n");
+
   webpage += tree;
+  tree = "";
+
   webpage += F("</tbody>\n");
   webpage += F("</table>\n");
   if (bigFolder) {
     webpage += F("<p>(Folder too big)</p>\n");
   }
   webpage += F("<hr>");
-
-  tree = "";
 
   if (directory == "/") {
   webpage += F("<table>\n");
@@ -2127,7 +2191,15 @@ void handleRoot(AsyncWebServerRequest *request) {
     webpage.replace("WiFi Web - ", "<a href=\"/sysinfo\">System Information</a> - <a href=\"/syssetup\" onclick=\"return add_time(this);\">Setup</a> - WiFi Web - ");
   }
 
-  request->send(200, "text/html", webpage);
+  if (c_len) {
+    Serial.print("Page: ");
+    Serial.println(webpage.length());
+
+    streamBuf(request, (uint8_t*)webpage.c_str(), webpage.length(), "text/html");
+
+  } else {
+      request->send(200, "text/html", webpage);
+  }
 }
 
 void doConfirmButton(AsyncWebServerRequest *request, String press, String ask) {
