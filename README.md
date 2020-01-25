@@ -32,6 +32,8 @@ How to use it:
 - Replace GO.begin() with MG.begin()
 - Replace GO.update() with MG.update()
 - Replace GO.BtnA.isPressed() with MG.BtnA.isPressed()
+
+3. Replace SD.begin() with sd_init(), setup() should now look like this:
 ```
 void setup(void) {
     MG.begin(115200);
@@ -44,7 +46,7 @@ void setup(void) {
 }
 ```
 
-3. If your application does have a menu, add an menu entry where you call this:
+4. If your application does have a menu, add an menu entry where you call this:
 ```
 showWiFiWeb();
 ```
