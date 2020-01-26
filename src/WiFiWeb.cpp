@@ -2,20 +2,27 @@
 #include <WiFiWeb.h>
 #include <MirrorGo.h>
 
+#ifdef ESP32
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <ESPmDNS.h>
 #include <WiFiAP.h>
-
-#ifdef ESP32
-#include <WiFi.h>
 #include <AsyncTCP.h>
+#include <esp_task_wdt.h>
 #elif defined(ESP8266)
 #include <ESP8266WiFi.h>
+#include <WiFiClient.h>
+#include <ESP8266mDNS.h>
+#include <ESP8266WiFiAP.h>
 #include <ESPAsyncTCP.h>
 #endif
 #include <ESPAsyncWebServer.h>
 #include <WebAuthentication.h>
+
+
+#define bm_check_integrity(print_errors) heap_caps_check_integrity(MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT, print_errors)
+#define bm_malloc(size) heap_caps_malloc(size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT)
+#define bm_free(p) heap_caps_free(p)
 
 
 typedef struct {
@@ -724,8 +731,6 @@ size_t streamFile(AsyncWebServerRequest *request, String path, const String & co
 
   return Size;
 }
-
-#define bm_check_integrity(print_errors) heap_caps_check_integrity(MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT, print_errors)
 
 bool handleFileRead(AsyncWebServerRequest *request, String path) {
   Serial.println("handleFileRead: " + path);
@@ -1459,7 +1464,6 @@ void doSaveSetup(AsyncWebServerRequest *request) {
 
   for (uint8_t i = 0; i < request->args(); i++) {
     if (request->argName(i) == "wifimode") {
-      Serial.printf("Dir Name: %s\n", request->arg(i));
       wifimode =  request->arg(i).toInt();
     }
     else if (request->argName(i) == "wifissid") {
@@ -1680,91 +1684,10 @@ String htmlButtonDirect(String Caption, String Value, String Params = "class='bu
   return webpage;
 }
 
-void handleRoot(AsyncWebServerRequest *request) {
-  if (!handleLogin(request))
-    return;
-
-  String directory = urldecode(request->url());
-  uploadPath = directory;
-
+String htmlDirEntry(File entry, bool shortUrl) {
   String entryName = "";
   String entryPath = "";
   String tree = "";
-  size_t c_len = 0;
-  bool emptyFolder = true;
-  bool bigFolder = false;
-  bool shortUrl = false;
-  MemInfo memnow;
-  size_t treeResvd = 24576;
-  size_t pageResvd = treeResvd+8192;
-
-/*
-  Serial.print("path:");
-  Serial.println(directory);
-*/
-  String parentdir = removeLastElement(directory);
-  String lastElement = getLastElement(directory);
-  if (lastElement == "") {
-    shortUrl = true;
-    if (parentdir.length() > 1)
-      parentdir = parentdir.substring(0, parentdir.length() - 1);
-    directory = parentdir;
-    uploadPath = directory;
-    parentdir = removeLastElement(directory);
-    lastElement = getLastElement(directory);
-  }
-
-  if (parentdir.length() > 1)
-    parentdir = parentdir.substring(0, parentdir.length() - 1);
-/*
-  Serial.print("parentdir:");
-  Serial.println(parentdir);
-
-  Serial.print("lastElement:");
-  Serial.println(lastElement);
-*/  
-
-  if (directory != "/") {
-  File dir = SD.open(directory);
-
-  FillMemInfo(&memnow);
-  
-  Serial.print("MaxAlloc: ");
-  Serial.print((int32_t)memnow.Heap.MaxAlloc);
-  Serial.print(" Free: ");
-  Serial.println((int32_t)memnow.Heap.Free);
-
-  pageResvd = memnow.Heap.MaxAlloc/2;
-  if (pageResvd > 65534-4096)
-    pageResvd = 65534-4096;
-  treeResvd = pageResvd-4096-1024;
-  pageResvd = treeResvd+8192;
-
-  if (!tree.reserve(treeResvd)) {
-    treeResvd -= 24576;
-    pageResvd = treeResvd+8192;
-  }
-  if (!tree.reserve(treeResvd)) {
-    treeResvd -= 24576;
-    pageResvd = treeResvd+8192;
-  }
-
-  FillMemInfo(&memnow);
-
-  Serial.print("Tree reserved: ");
-  Serial.print(treeResvd);
-  Serial.print(" MaxAlloc: ");
-  Serial.print((int32_t)memnow.Heap.MaxAlloc);
-  Serial.print(" Free: ");
-  Serial.println((int32_t)memnow.Heap.Free);
-
-  while (true) {
-    File entry =  dir.openNextFile();
-
-    if (!entry) {
-      // no more files
-      break;
-    }
 
     entryPath = entry.name();
     entryName = getLastElement(entryPath);
@@ -1842,26 +1765,104 @@ void handleRoot(AsyncWebServerRequest *request) {
       tree += F("</tr>\n");
     }
 
-    emptyFolder = false;
+  return tree;
+}
 
-    entry.close();
+void handleRoot(AsyncWebServerRequest *request) {
+  if (!handleLogin(request))
+    return;
 
-    if (tree.length() >= treeResvd) {
-      bigFolder = true;
-      break;
-    }
+  String directory = urldecode(request->url());
+  uploadPath = directory;
+
+  String entryName = "";
+  String entryPath = "";
+  String tree = "";
+  char* c_tree;
+  size_t c_len = 0;
+  bool emptyFolder = true;
+  bool bigFolder = false;
+  bool shortUrl = false;
+  MemInfo memnow;
+/*
+  Serial.print("path:");
+  Serial.println(directory);
+*/
+  String parentdir = removeLastElement(directory);
+  String lastElement = getLastElement(directory);
+  if (lastElement == "") {
+    shortUrl = true;
+    if (parentdir.length() > 1)
+      parentdir = parentdir.substring(0, parentdir.length() - 1);
+    directory = parentdir;
+    uploadPath = directory;
+    parentdir = removeLastElement(directory);
+    lastElement = getLastElement(directory);
   }
 
-  FillMemInfo(&memnow);
+  if (parentdir.length() > 1)
+    parentdir = parentdir.substring(0, parentdir.length() - 1);
+/*
+  Serial.print("parentdir:");
+  Serial.println(parentdir);
 
-  Serial.print("Tree: ");
-  Serial.print(tree.length());
-  Serial.print(" MaxAlloc: ");
-  Serial.print((int32_t)memnow.Heap.MaxAlloc);
-  Serial.print(" Free: ");
-  Serial.println((int32_t)memnow.Heap.Free);
+  Serial.print("lastElement:");
+  Serial.println(lastElement);
+*/  
 
-  c_len = tree.length();
+  File dir;
+
+  if (directory != "/") {
+    dir = SD.open(directory);
+
+    FillMemInfo(&memnow);
+  
+    Serial.print("MaxAlloc: ");
+    Serial.print((int32_t)memnow.Psram.MaxAlloc);
+    Serial.print(" Free: ");
+    Serial.println((int32_t)memnow.Psram.Free);
+    while (true) {
+      File entry =  dir.openNextFile();
+
+      if (!entry) {
+        // no more files
+        // return to the first file in the directory
+        dir.rewindDirectory();
+        break;
+      }
+
+      String treeEntry = htmlDirEntry(entry, shortUrl);
+      c_len += treeEntry.length();
+
+      emptyFolder = false;
+
+      entry.close();
+
+      if (c_len >= 24576) {
+        bigFolder = true;
+      }
+    }
+
+    /* Inform the watchdog this task is alive */
+    if (bigFolder) {
+#ifdef ESP32
+      esp_task_wdt_reset();
+#elif defined(ESP8266)
+      ESP.wdtFeed();
+#else
+      wdt_reset();
+#endif
+      bigFolder = false;
+    }
+
+    FillMemInfo(&memnow);
+
+    Serial.print("Tree: ");
+    Serial.print(c_len);
+    Serial.print(" MaxAlloc: ");
+    Serial.print((int32_t)memnow.Psram.MaxAlloc);
+    Serial.print(" Free: ");
+    Serial.println((int32_t)memnow.Psram.Free);
 
   } else {
     entryName = getLastElement(WifiWebAppData);
@@ -1934,21 +1935,6 @@ void handleRoot(AsyncWebServerRequest *request) {
 
   String webpage = "";
 
-  if (c_len) {
-    if (!webpage.reserve(pageResvd)) {
-      Serial.println("Page reserve failed.");
-    }
-
-    FillMemInfo(&memnow);
-
-    Serial.print("Page reserved: ");
-    Serial.print(pageResvd);
-    Serial.print(" MaxAlloc: ");
-    Serial.print((int32_t)memnow.Heap.MaxAlloc);
-    Serial.print(" Free: ");
-    Serial.println((int32_t)memnow.Heap.Free);
-  }
-
   webpage += F(header);
   if (directory == "/") {
     webpage.replace("Web FileBrowser", "Remote Console");
@@ -1984,7 +1970,7 @@ void handleRoot(AsyncWebServerRequest *request) {
     webpage += F("</div>");
   }
 
-  if (tree == "") {
+  if ((tree == "") && !c_len) {
     String dlPath = directory;
     if (dlPath == "/screen.bmp") {
 
@@ -2038,6 +2024,12 @@ void handleRoot(AsyncWebServerRequest *request) {
 
   webpage += tree;
   tree = "";
+
+  String webhead = "";
+  if (c_len) {
+    webhead = webpage;
+    webpage = "";
+  }
 
   webpage += F("</tbody>\n");
   webpage += F("</table>\n");
@@ -2192,13 +2184,55 @@ void handleRoot(AsyncWebServerRequest *request) {
   }
 
   if (c_len) {
-    Serial.print("Page: ");
-    Serial.println(webpage.length());
+    size_t treeResvd = webhead.length()+c_len;
+    c_tree = (char*)bm_malloc(webhead.length()+c_len+webpage.length()+1);
 
-    streamBuf(request, (uint8_t*)webpage.c_str(), webpage.length(), "text/html");
+    strcpy(c_tree, webhead.c_str());
+    c_len = webhead.length();
+    webhead = "";
+
+    Serial.print("Head: ");
+    Serial.println(c_len);
+
+    while (true) {
+      File entry =  dir.openNextFile();
+
+      if (!entry) {
+        // no more files
+        // return to the first file in the directory
+        dir.rewindDirectory();
+        break;
+      }
+
+      String treeEntry = htmlDirEntry(entry, shortUrl);
+      strcat(c_tree, treeEntry.c_str());
+      c_len += treeEntry.length();
+
+      emptyFolder = false;
+
+      entry.close();
+
+      if (c_len >= treeResvd) {
+        bigFolder = true;
+        // return to the first file in the directory
+        dir.rewindDirectory();
+        break;
+      }
+    }
+
+    strcat(c_tree, webpage.c_str());
+    c_len += webpage.length();
+    webpage = "";
+
+    Serial.print("Page: ");
+    Serial.println(c_len);
+
+    streamBuf(request, (uint8_t*)c_tree, c_len, "text/html");
+
+    bm_free(c_tree);
 
   } else {
-      request->send(200, "text/html", webpage);
+    request->send(200, "text/html", webpage);
   }
 }
 
