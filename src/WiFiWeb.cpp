@@ -60,6 +60,7 @@ typedef struct {
 
 
 const byte DNS_PORT = 53;
+const char* host = "odroidgo";
 const char* ssid = "odroidgo";
 const char* password = "odroidgo";
 
@@ -70,6 +71,7 @@ long  gmtOffset_sec = 3600;
 int   daylightOffset_sec = 3600;
 time_t browserTime = 0;
 
+String WifiAPHost = host;
 String WifiAPSSID = ssid;
 String WifiAPPSK = password;
 
@@ -77,6 +79,7 @@ IPAddress WifiAPIP = IPAddress(192, 168, 4, 1);
 IPAddress WifiAPGW = WifiAPIP;
 IPAddress WifiAPMask = IPAddress(255, 255, 255, 0);
 
+String WifiHost = host;
 String WifiSSID = "";
 String WifiPSK = "";
 
@@ -100,6 +103,7 @@ uint8_t WifiWebMode = 0;
 bool webfileReadonly = true;
 bool webrcAutoRefresh = false;
 
+String NewWifiAPHost = "";
 String NewWifiAPSSID = "";
 String NewWifiAPPSK = "";
 
@@ -107,6 +111,7 @@ IPAddress NewWifiAPIP = IPAddress(0, 0, 0, 0);
 IPAddress NewWifiAPGW = NewWifiAPIP;
 IPAddress NewWifiAPMask = IPAddress(255, 255, 255, 0);
 
+String NewWifiHost = "";
 String NewWifiSSID = "";
 String NewWifiPSK = "";
 
@@ -1158,6 +1163,10 @@ bool GetWifiAPData(bool write = false) {
         WifiAPGWValue = wifiAPFile.readStringUntil('\n');
         WifiAPGWValue.replace("\r", "");
       }
+      if (wifiAPFile.available()) {
+        WifiAPHost = wifiAPFile.readStringUntil('\n');
+        WifiAPHost.replace("\r", "");
+      }
 
       WifiAPIP.fromString(WifiAPIPValue);
       WifiAPMask.fromString(WifiAPMaskValue);
@@ -1192,6 +1201,9 @@ bool GetWifiData() {
       WifiList = NULL;
     }
     WifiCount = 0;
+
+    /* Todo: find place to store client mode hostname */
+    WifiHost = WifiAPHost;
 
     Serial.println("Read from file: ");
     while (wifiFile.available()) {
@@ -1353,6 +1365,14 @@ void GetNewWifiWebMode() {
     NewWifiDNS1 = WifiDNS1;
     NewWifiDNS2 = WifiDNS2;
   }
+
+  if (NewWifiAPHost == "") {
+    NewWifiAPHost = WifiAPHost;
+  }
+
+  if (NewWifiHost == "") {
+    NewWifiHost = WifiHost;
+  }
 }
 
 time_t getBrowserTime(const String value) {
@@ -1414,6 +1434,10 @@ void handleSysSetup(AsyncWebServerRequest *request) {
   webpage += NewWifiAPGW.toString();
   webpage += F("\";\n");
 
+  webpage += F("var WifiAPHost = \"");
+  webpage += NewWifiAPHost;
+  webpage += F("\";\n");
+
   webpage += F("var WifiSSID = \"");
   webpage += NewWifiSSID;
   webpage += F("\";\n");
@@ -1437,6 +1461,10 @@ void handleSysSetup(AsyncWebServerRequest *request) {
   webpage += NewWifiDNS2.toString();
   webpage += F("\";\n");
 
+  webpage += F("var WifiHost = \"");
+  webpage += NewWifiHost;
+  webpage += F("\";\n");
+
   webpage += F("var WifiIPMode = ");
   webpage += String(NewWifiIPMode);
   webpage += F(";\n");
@@ -1452,6 +1480,7 @@ void handleSysSetup(AsyncWebServerRequest *request) {
   webpage += F("    var editgw   = document.getElementById('wifigw');\n");
   webpage += F("    var editdns1 = document.getElementById('wifidns1');\n");
   webpage += F("    var editdns2 = document.getElementById('wifidns2');\n");
+  webpage += F("    var edithost = document.getElementById('wifihost');\n");
   webpage += F("    var ipmode = 0;\n");
   webpage += F("    if (editstatic.checked) {\n");
   webpage += F("      ipmode = 1;\n");
@@ -1464,6 +1493,7 @@ void handleSysSetup(AsyncWebServerRequest *request) {
   webpage += F("        WifiAPIP   = editip.value;\n");
   webpage += F("        WifiAPMask = editmask.value;\n");
   webpage += F("        WifiAPGW   = editgw.value;\n");
+  webpage += F("        WifiAPHost = edithost.value;\n");
   webpage += F("    } else if (WifiWebMode == 2) {\n");
   webpage += F("        WifiSSID   = editssid.value;\n");
   webpage += F("        WifiPSK    = editpsk.value;\n");
@@ -1472,6 +1502,7 @@ void handleSysSetup(AsyncWebServerRequest *request) {
   webpage += F("        WifiGW     = editgw.value;\n");
   webpage += F("        WifiDNS1   = editdns1.value;\n");
   webpage += F("        WifiDNS2   = editdns2.value;\n");
+  webpage += F("        WifiHost   = edithost.value;\n");
   webpage += F("        WifiIPMode = ipmode;\n");
   webpage += F("    }\n");
   webpage += F("    ipmode = 0;\n");
@@ -1482,7 +1513,8 @@ void handleSysSetup(AsyncWebServerRequest *request) {
   webpage += F("        editmask.value = WifiAPMask;\n");
   webpage += F("        editgw.value   = WifiAPGW;\n");
   webpage += F("        editdns1.value = WifiAPIP;\n");
-  webpage += F("        editdns2.value   = \"\";\n");
+  webpage += F("        editdns2.value = \"\";\n");
+  webpage += F("        edithost.value = WifiAPHost;\n");
   webpage += F("        ipmode = 1;\n");
   webpage += F("    } else if (m == 2) {\n");
   webpage += F("        editssid.value = WifiSSID;\n");
@@ -1492,6 +1524,7 @@ void handleSysSetup(AsyncWebServerRequest *request) {
   webpage += F("        editgw.value   = WifiGW;\n");
   webpage += F("        editdns1.value = WifiDNS1;\n");
   webpage += F("        editdns2.value = WifiDNS2;\n");
+  webpage += F("        edithost.value = WifiHost;\n");
   webpage += F("        ipmode = WifiIPMode;\n");
   webpage += F("    } else {\n");
   webpage += F("        editssid.value = \"\"\n");
@@ -1499,14 +1532,16 @@ void handleSysSetup(AsyncWebServerRequest *request) {
   webpage += F("        editip.value   = \"\";\n");
   webpage += F("        editmask.value = \"\";\n");
   webpage += F("        editgw.value   = \"\";\n");
-  webpage += F("        editdns1.value   = \"\";\n");
-  webpage += F("        editdns2.value   = \"\";\n");
+  webpage += F("        editdns1.value = \"\";\n");
+  webpage += F("        editdns2.value = \"\";\n");
+  webpage += F("        edithost.value = \"\";\n");
   webpage += F("    }\n");
   webpage += F("    WifiWebMode = m;\n");
   webpage += F("    editssid.disabled   = (WifiWebMode == 0);\n");
   webpage += F("    editpsk.disabled    = (WifiWebMode == 0);\n");
   webpage += F("    editstatic.disabled = (WifiWebMode == 0);\n");
   webpage += F("    editdhcp.disabled   = (WifiWebMode == 0);\n");
+  webpage += F("    edithost.disabled   = (WifiWebMode == 0);\n");
   webpage += F("    editstatic.checked = (ipmode == 1);\n");
   webpage += F("    editdhcp.checked   = (ipmode == 2);\n");
   webpage += F("    updateIP(ipmode);\n");
@@ -1651,6 +1686,14 @@ void handleSysSetup(AsyncWebServerRequest *request) {
     myIPvalue = NewWifiDNS2.toString();
   }
   webpage += myIPvalue;
+  webpage += F("\">\n");
+
+  webpage += F("  <label for=\"wifihost\">Hostname: </label>\n");
+  webpage += F("  <input name=\"wifihost\" id=\"wifihost\" value=\"");
+  if (NewWifiWebMode == 1)
+    webpage += NewWifiAPHost;
+  else if (NewWifiWebMode == 2)
+    webpage += NewWifiHost;
   webpage += F("\">\n");
 
   webpage += F("</fieldset>\n");
@@ -1866,6 +1909,7 @@ void doSaveSetup(AsyncWebServerRequest *request) {
   IPAddress wifigw;
   IPAddress wifidns1;
   IPAddress wifidns2;
+  String wifihost = "";
   String webuser = "";
   String webpass = "";
   String action = "";
@@ -1905,6 +1949,9 @@ void doSaveSetup(AsyncWebServerRequest *request) {
     }
     else if (request->argName(i) == "wifidns2") {
       wifidns2.fromString(request->arg(i));
+    }
+    else if (request->argName(i) == "wifihost") {
+      wifihost = request->arg(i);
     }
 
     else if (request->argName(i) == "webuser") {
@@ -1973,6 +2020,8 @@ void doSaveSetup(AsyncWebServerRequest *request) {
         NewWifiAPMask = wifimask;
         NewWifiAPGW   = wifigw;
       }
+
+      NewWifiAPHost = wifihost;
     } else if ((wifimode == 2) && (wifissid != "")) {
       if ((wifipsk == "") && (wifissid == NewWifiSSID)) {
         wifipsk = NewWifiPSK;
@@ -2007,6 +2056,8 @@ void doSaveSetup(AsyncWebServerRequest *request) {
         NewWifiDNS1 = wifidns1;
         NewWifiDNS2 = wifidns2;
       }
+
+      NewWifiHost = wifihost;
     } else if (wifimode == 0) {
       NewWifiWebMode = wifimode;
     }
@@ -2925,6 +2976,7 @@ bool SaveWifiWebMode() {
           wifiAPFile.println(NewWifiAPIP.toString());
           wifiAPFile.println(NewWifiAPMask.toString());
           wifiAPFile.println(NewWifiAPGW.toString());
+          wifiAPFile.println(NewWifiAPHost);
           wifiAPFile.close();
         }
   } else if (NewWifiWebMode == 2) {
@@ -3262,7 +3314,7 @@ bool wifi_init(bool interactive) {
       }
 
       WiFi.softAPConfig(WifiAPIP, WifiAPGW, WifiAPMask);
-      WiFi.softAPsetHostname("odroidgo");
+      WiFi.softAPsetHostname(WifiAPHost.c_str());
 
       IPAddress myIP = WiFi.softAPIP();
 
@@ -3276,12 +3328,16 @@ bool wifi_init(bool interactive) {
       GO.lcd.println(" ");
       Serial.println();
 
-      dnsStarted = dnsServer.start(DNS_PORT, "odroidgo.local", myIP);
+      String FQDN = WifiAPHost + ".local";
+
+      dnsStarted = dnsServer.start(DNS_PORT, FQDN, myIP);
       if (dnsStarted) {
         Serial.println("DNS responder started");
         GO.lcd.println("DNS responder started");
-        Serial.println("You can connect via http://odroidgo.local");
-        GO.lcd.println("You can connect via http://odroidgo.local");
+        Serial.print("You can connect via http://");
+        GO.lcd.println(FQDN);
+        GO.lcd.print("You can connect via http://");
+        GO.lcd.println(FQDN);
       }
 
   } else if (WifiWebMode == 2) {
@@ -3378,6 +3434,7 @@ bool wifi_init(bool interactive) {
         WifiIPMode = 1;
         WiFi.config(WifiIP, WifiGW, WifiMask, WifiDNS1, WifiDNS2);
       }
+      WiFi.setHostname(WifiHost.c_str());
 
       WifiIP = WiFi.localIP();
       WifiMask = calculateCIDRSubnet(WiFi.subnetCIDR());
@@ -3393,11 +3450,15 @@ bool wifi_init(bool interactive) {
       GO.lcd.println(" ");
       Serial.println();
 
-      if (MDNS.begin("odroidgo")) {
+      String FQDN = WifiHost + ".local";
+
+      if (MDNS.begin(WifiHost.c_str())) {
         Serial.println("MDNS responder started");
         GO.lcd.println("MDNS responder started");
-        Serial.println("You can connect via http://odroidgo.local");
-        GO.lcd.println("You can connect via http://odroidgo.local");
+        Serial.print("You can connect via http://");
+        GO.lcd.println(FQDN);
+        GO.lcd.print("You can connect via http://");
+        GO.lcd.println(FQDN);
       }
 
       //init and get the time
