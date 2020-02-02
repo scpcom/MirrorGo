@@ -2584,7 +2584,6 @@ void handleRoot(AsyncWebServerRequest *request) {
 
   File dir;
 
-  if (directory != "/") {
     dir = SD.open(directory);
 
     FillMemInfo(&memnow);
@@ -2636,104 +2635,14 @@ void handleRoot(AsyncWebServerRequest *request) {
     Serial.print(" Free: ");
     Serial.println((int32_t)memnow.Psram.Free);
 
-  } else {
-    entryName = getLastElement(WifiWebAppData);
-    entryPath = WifiWebAppData;
-    String entryTime = "";
-
-      tree += F("<tr>");
-      tree += F("<td data-value=\"");
-      tree += entryName+"/";
-      
-      tree += F("\"><a class=\"icon dir\" href=\"");
-      tree += entryPath+"/";
-      tree += F("\">");
-
-      tree += F("&nbsp;&nbsp;&nbsp;&nbsp;");
-
-      tree += F("</a><a href=\"");
-      tree += entryPath+"/";
-      tree += F("\">");
-      tree += entryName+"/";
-
-      tree += F("</a></td>");
-
-      tree += F("<td class=\"dCol\" data-value=\"");
-      tree += entryTime;
-      tree += F("\">");
-      tree += entryTime;
-      tree += F("</td>");
-
-      tree += F("<td class=\"dCol\" data-value=\"0\">-</td>");
-
-      tree += F("</tr>\n");
-
-    entryName = "screen.bmp";
-    entryPath = "/"+entryName;
-    entryTime = getLocalTimeString();
-    
-      if (entryPath == "/screen.bmp") {
-      //MG.lcd.Save();
-
-      //tree += F("<img id=\"screen-shot\" src=\"");
-      tree += F("<img id=\"screen-shot\" src=\"data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7\" data-src=\"");
-      tree += entryPath;
-      tree += F("\" alt=\"\"  width=\"320\" height=\"240\">");
-
-      tree += F("<tr>");
-      tree += F("<td data-value=\"");
-      tree += entryPath;
-      
-      tree += F("\"><a class=\"icon file\" draggable=\"true\" href=\"");
-      tree += entryPath;
-      tree +=  F("\">");
-
-      tree += F("&nbsp;&nbsp;&nbsp;&nbsp;");
-
-      tree += F("</a><a href=\"");
-      tree += entryPath;
-      tree += F("\">");
-      tree += entryName;
-
-      tree += F("</a></td>");
-      
-      tree += F("<td class=\"dCol\" data-value=\"");
-      tree += entryTime;
-      tree += F("\">");
-      tree += entryTime;
-      tree += F("</td>");
-
-      tree += F("<td class=\"dCol\" data-value=\")");
-      tree += file_size(MG.lcd.GetBitmapSize());
-      tree += F("\">");
-      tree += file_size(MG.lcd.GetBitmapSize());
-      tree += F("</td>");
-
-      tree += F("<td class=\"dCol\" data-value=\"0\">");
-      tree += F("<button class='buttons' onclick=\"updateImages()");
-      tree += F(";\">Refresh</button></td>");
-
-      tree += F("</tr>\n");
-      }
-      
-      emptyFolder = false;
-  }
-
-
   String webpage = "";
 
   webpage += header;
-  if (directory == "/") {
-    webpage.replace("Web FileBrowser", "Remote Console");
-    webpage += F("<h1 id=\"header\">Remote Console");
-    webpage += F("</h1>");
-  } else {
+
     webpage += F("<h1 id=\"header\">Index of ");
     webpage += directory;
     webpage += F("</h1>");
-  }
 
-  if (directory != "/") {
     webpage += F("<div id=\"parentDirLinkBox\" style=\"display:block;\">");
     
     webpage += F("<a id=\"parentDirLink\" class=\"icon up\" href=\"");
@@ -2755,7 +2664,6 @@ void handleRoot(AsyncWebServerRequest *request) {
     webpage += F("</a>");
     
     webpage += F("</div>");
-  }
 
   if ((tree == "") && !c_len) {
     String dlPath = directory;
@@ -2801,9 +2709,6 @@ void handleRoot(AsyncWebServerRequest *request) {
   webpage += F("<th class=\"dCol\" onclick=\"sortTable(1);\">Last modified</th>");
   webpage += F("<th class=\"dCol\" onclick=\"sortTable(2);\">Size</th>");
   webpage += F("<th>");
-  if (directory == "/") {
-    webpage += htmlButtonDirect("Restart", "restart",  "class='buttons' style=\"float: right;\"");
-  }
   webpage += F("</th>");
   webpage += F("</tr>\n");
   webpage += F("</thead>\n");
@@ -2823,119 +2728,6 @@ void handleRoot(AsyncWebServerRequest *request) {
   webpage += F("</table>\n");
   webpage += F("<hr>");
 
-  if (directory == "/") {
-  webpage += F("<table>\n");
-
-  webpage += F("<tr>\n");
-
-  webpage += F("<td>\n");
-  webpage += htmlButtonPress("Menu", "Menu");
-  webpage += F("</td>\n");
-
-  webpage += F("<td>\n");
-  webpage += htmlButtonPress("Volume", "Volume");
-  webpage += F("</td>\n");
-
-  webpage += F("<td>\n");
-  webpage += htmlButtonPress("Select", "Select");
-  webpage += F("</td>\n");
-
-  webpage += F("<td>\n");
-  webpage += htmlButtonPress("Start", "Start");
-  webpage += F("</td>\n");
-
-  webpage += F("</tr>\n");
-
-
-  webpage += F("<tr>\n");
-
-  webpage += F("<td>\n");
-  webpage += F("&nbsp;&nbsp;&nbsp;&nbsp;");
-  webpage += F("</td>\n");
-
-  webpage += F("<td>\n");
-  webpage += F("&nbsp;&nbsp;&nbsp;&nbsp;");
-  webpage += F("</td>\n");
-
-  webpage += F("<td>\n");
-  webpage += F("&nbsp;&nbsp;&nbsp;&nbsp;");
-  webpage += F("</td>\n");
-
-  webpage += F("<td>\n");
-  webpage += F("&nbsp;&nbsp;&nbsp;&nbsp;");
-  webpage += F("</td>\n");
-
-  webpage += F("</tr>\n");
-
-  webpage += F("<tr>\n");
-
-  webpage += F("<td>\n");
-  webpage += F("&nbsp;&nbsp;&nbsp;&nbsp;");
-  webpage += F("</td>\n");
-
-  webpage += F("<td>\n");
-  webpage += htmlButtonPress("&uarr;", "Up");
-  webpage += F("</td>");
-
-  webpage += F("<td>\n");
-  webpage += F("&nbsp;&nbsp;&nbsp;&nbsp;");
-  webpage += F("</td>\n");
-
-  webpage += F("<td>\n");
-  webpage += htmlButtonPress("A", "A",  "class='buttons' style=\"float: right;\"");
-  webpage += F("</td>\n");
-
-  webpage += F("</tr>\n");
-
-
-  webpage += F("<tr>\n");
-
-  webpage += F("<td>\n");
-  webpage += htmlButtonPress("&larr;", "Left",  "class='buttons' style=\"float: right;\"");
-  webpage += F("</td>\n");
-
-  webpage += F("<td>\n");
-  webpage += htmlButtonPress("&rarr;", "Right", "class='buttons' style=\"float: right;\"");
-  webpage += F("</td>\n");
-
-  webpage += F("<td class=\"ledCol\">\n");
-  if (MG.led.isOn())
-    webpage += htmlButtonPress("LED", "LED", "class=\"ledbtn ledbtnon\"");
-  else
-    webpage += htmlButtonPress("LED", "LED", "class=\"ledbtn ledbtnoff\"");
-  webpage += F("</td>\n");
-
-  webpage += F("<td>\n");
-  webpage += htmlButtonPress("B", "B");
-  webpage += F("</td>\n");
-
-  webpage += F("</tr>\n");
-
-
-  webpage += F("<tr>\n");
-
-  webpage += F("<td>\n");
-  webpage += F("&nbsp;&nbsp;&nbsp;&nbsp;");
-  webpage += F("</td>\n");
-
-  webpage += F("<td>\n");
-  webpage += htmlButtonPress("&darr;", "Down");
-  webpage += F("</td>\n");
-
-  webpage += F("<td>\n");
-  webpage += F("&nbsp;&nbsp;&nbsp;&nbsp;");
-  webpage += F("</td>\n");
-
-  webpage += F("<td>\n");
-  webpage += F("&nbsp;&nbsp;&nbsp;&nbsp;");
-  webpage += F("</td>\n");
-
-  webpage += F("</tr>\n");
-
-  
-  webpage += F("</table>\n");
-  
-  } else {
     if (!webfileReadonly) {
       webpage += F("<FORM action='/fupload' method='post' enctype='multipart/form-data'>");
       webpage += F("<input class='buttons' type='file' name='fupload' id = 'fupload' value=''>");
@@ -2950,7 +2742,6 @@ void handleRoot(AsyncWebServerRequest *request) {
     }
 
     webpage += F("<br>");
-  }
 
   webpage += footer_script;
 
@@ -2963,10 +2754,6 @@ void handleRoot(AsyncWebServerRequest *request) {
   webpage += F("</script>\n");
 
   webpage += footer;
-
-  if (directory == "/") {
-    webpage.replace("WiFi Web - ", "<a href=\"/sysinfo\">System Information</a> - <a href=\"/syssetup\" onclick=\"return add_time(this);\">Setup</a> - WiFi Web - ");
-  }
 
   if (c_len) {
     c_tree = (char*)bm_malloc(webhead.length()+c_len+webpage.length()+1);
