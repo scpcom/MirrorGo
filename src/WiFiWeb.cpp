@@ -99,8 +99,16 @@ bool webrcAutoRefresh = false;
 String NewWifiAPSSID = "";
 String NewWifiAPPSK = "";
 
+IPAddress NewWifiAPIP = IPAddress(0, 0, 0, 0);
+IPAddress NewWifiAPGW = NewWifiAPIP;
+IPAddress NewWifiAPMask = IPAddress(255, 255, 255, 0);
+
 String NewWifiSSID = "";
 String NewWifiPSK = "";
+
+IPAddress NewWifiIP = IPAddress(0, 0, 0, 0);
+IPAddress NewWifiGW = NewWifiIP;
+IPAddress NewWifiMask = IPAddress(255, 255, 255, 0);
 
 uint8_t NewWifiWebMode = 0xFF;
 uint8_t NewIPMode = NewWifiWebMode;
@@ -1085,6 +1093,76 @@ void handleSysInfo(AsyncWebServerRequest *request) {
   request->send(200, "text/html", webpage);
 }
 
+bool GetWifiAPData(bool write = false) {
+  String path = "/WIFIAP.TXT";
+
+  Serial.print("Reading file: ");
+  Serial.println(path);
+  File wifiAPFile = SD.open(path);
+
+  if (!wifiAPFile) {
+    Serial.println("Failed to open file for reading");
+
+    if (!write) {
+      return false;
+    }
+
+    File wifiAPFile = SD.open(path, FILE_WRITE);
+    if (!wifiAPFile) {
+      Serial.println("Failed to open file for writing");
+    } else {
+      WifiAPSSID+="-";
+      WifiAPSSID+=String(random(0xffffff),HEX);
+      WifiAPPSK+="-";
+      WifiAPPSK+=String(random(65535),HEX);
+
+      wifiAPFile.println(WifiAPSSID);
+      wifiAPFile.println(WifiAPPSK);
+
+      wifiAPFile.println(WifiAPIP.toString());
+      wifiAPFile.println(WifiAPMask.toString());
+      wifiAPFile.println(WifiAPGW.toString());
+
+      wifiAPFile.close();
+    }
+  } else {
+    Serial.println("Read from file: ");
+    while (wifiAPFile.available()) {
+      WifiAPSSID = wifiAPFile.readStringUntil('\n');
+      WifiAPSSID.replace("\r", "");
+      WifiAPPSK = wifiAPFile.readStringUntil('\n');
+      WifiAPPSK.replace("\r", "");
+
+      String WifiAPIPValue   = WifiAPIP.toString();
+      String WifiAPMaskValue = WifiAPMask.toString();
+      String WifiAPGWValue   = WifiAPGW.toString();
+
+      if (wifiAPFile.available()) {
+        WifiAPIPValue = wifiAPFile.readStringUntil('\n');
+        WifiAPIPValue.replace("\r", "");
+        WifiAPGWValue = WifiAPIPValue;
+      }
+      if (wifiAPFile.available()) {
+        WifiAPMaskValue = wifiAPFile.readStringUntil('\n');
+        WifiAPMaskValue.replace("\r", "");
+      }
+      if (wifiAPFile.available()) {
+        WifiAPGWValue = wifiAPFile.readStringUntil('\n');
+        WifiAPGWValue.replace("\r", "");
+      }
+
+      WifiAPIP.fromString(WifiAPIPValue);
+      WifiAPMask.fromString(WifiAPMaskValue);
+      WifiAPGW.fromString(WifiAPGWValue);
+
+      break;
+    }
+    wifiAPFile.close();
+  }
+
+  return true;
+}
+
 bool GetWifiData() {
   String path = "/WIFI.TXT";
 
@@ -1167,9 +1245,23 @@ void GetNewWifiWebMode() {
     }
   }
 
+  if (NewWifiAPIP == IPAddress(0, 0, 0, 0)) {
+    NewWifiAPIP   = WifiAPIP;
+    NewWifiAPMask = WifiAPMask;
+    NewWifiAPGW   = WifiAPGW;
+  }
+
+  if (NewWifiIP == IPAddress(0, 0, 0, 0)) {
+    NewWifiIP   = WifiIP;
+    NewWifiMask = WifiMask;
+    NewWifiGW   = WifiGW;
+  }
+
   if (NewWifiAPSSID == "") {
 
     if (WifiAPSSID == "odroidgo") {
+      GetWifiAPData();
+/*
       String path = "/WIFIAP.TXT";
       Serial.print("Reading file: ");
       Serial.println(path);
@@ -1188,6 +1280,7 @@ void GetNewWifiWebMode() {
         }
         wifiAPFile.close();
       }
+*/
     }
 
     NewWifiAPSSID = WifiAPSSID;
@@ -1254,21 +1347,13 @@ void handleSysSetup(AsyncWebServerRequest *request) {
   webpage += F("\";\n");
 
   webpage += F("var WifiAPIP = \"");
-  if (NewWifiWebMode == 1) {
-    webpage += WiFi.softAPIP().toString();
-  } else {
-    webpage += WifiAPIP.toString();
-  }
+  webpage += NewWifiAPIP.toString();
   webpage += F("\";\n");
   webpage += F("var WifiAPMask = \"");
-  if (NewWifiWebMode == 1) {
-    webpage += calculateCIDRSubnet(WiFi.softAPSubnetCIDR()).toString();
-  } else {
-    webpage += WifiAPMask.toString();
-  }
+  webpage += NewWifiAPMask.toString();
   webpage += F("\";\n");
   webpage += F("var WifiAPGW = \"");
-  webpage += WifiAPGW.toString();
+  webpage += NewWifiAPGW.toString();
   webpage += F("\";\n");
 
   webpage += F("var WifiSSID = \"");
@@ -1278,25 +1363,13 @@ void handleSysSetup(AsyncWebServerRequest *request) {
   webpage += F("\";\n");
 
   webpage += F("var WifiIP = \"");
-  if (NewWifiWebMode == 2) {
-    webpage += WiFi.localIP().toString();
-  } else {
-    webpage += WifiIP.toString();
-  }
+  webpage += NewWifiIP.toString();
   webpage += F("\";\n");
   webpage += F("var WifiMask = \"");
-  if (NewWifiWebMode == 2) {
-    webpage += calculateCIDRSubnet(WiFi.subnetCIDR()).toString();
-  } else {
-    webpage += WifiMask.toString();
-  }
+  webpage += NewWifiMask.toString();
   webpage += F("\";\n");
   webpage += F("var WifiGW = \"");
-  if (NewWifiWebMode == 2) {
-    webpage += WiFi.gatewayIP().toString();
-  } else {
-    webpage += WifiGW.toString();
-  }
+  webpage += NewWifiGW.toString();
   webpage += F("\";\n");
 
   webpage += F("function updateWifi(m)\n");
@@ -1439,11 +1512,9 @@ void handleSysSetup(AsyncWebServerRequest *request) {
   webpage += F("  <input name=\"wifiip\" id=\"wifiip\" value=\"");
   String myIPvalue = "";
   if (NewWifiWebMode == 1) {
-    IPAddress myIP = WiFi.softAPIP();
-    myIPvalue = myIP.toString();
+    myIPvalue = NewWifiAPIP.toString();
   } else if (NewWifiWebMode == 2) {
-    IPAddress myIP = WiFi.localIP();
-    myIPvalue = myIP.toString();
+    myIPvalue = NewWifiIP.toString();
   }
   webpage += myIPvalue;
   webpage += F("\">\n");
@@ -1451,12 +1522,9 @@ void handleSysSetup(AsyncWebServerRequest *request) {
   webpage += F("  <label for=\"wifimask\"> / </label>\n");
   webpage += F("  <input name=\"wifimask\" id=\"wifimask\" value=\"");
   if (NewWifiWebMode == 1) {
-    IPAddress myIP = calculateCIDRSubnet(WiFi.softAPSubnetCIDR());
-    myIPvalue = myIP.toString();
+    myIPvalue = NewWifiAPMask.toString();
   } else if (NewWifiWebMode == 2) {
-    IPAddress myIP = calculateCIDRSubnet(WiFi.subnetCIDR());
-    //IPAddress myIP = WiFi.subnetMask();
-    myIPvalue = myIP.toString();
+    myIPvalue = NewWifiMask.toString();
   }
   webpage += myIPvalue;
   webpage += F("\">\n");
@@ -1464,11 +1532,9 @@ void handleSysSetup(AsyncWebServerRequest *request) {
   webpage += F("  <label for=\"wifigw\">Gateway: </label>\n");
   webpage += F("  <input name=\"wifigw\" id=\"wifigw\" value=\"");
   if (NewWifiWebMode == 1) {
-    IPAddress myIP = WifiAPGW;
-    myIPvalue = myIP.toString();
+    myIPvalue = NewWifiAPGW.toString();
   } else if (NewWifiWebMode == 2) {
-    IPAddress myIP = WiFi.gatewayIP();
-    myIPvalue = myIP.toString();
+    myIPvalue = NewWifiGW.toString();
   }
   webpage += myIPvalue;
   webpage += F("\">\n");
@@ -1680,6 +1746,10 @@ void doSaveSetup(AsyncWebServerRequest *request) {
   int8_t wifimode = -1;
   String wifissid = "";
   String wifipsk = "";
+  int8_t ipmode = -1;
+  IPAddress wifiip;
+  IPAddress wifimask;
+  IPAddress wifigw;
   String webuser = "";
   String webpass = "";
   String action = "";
@@ -1700,6 +1770,19 @@ void doSaveSetup(AsyncWebServerRequest *request) {
     }
     else if (request->argName(i) == "wifipsk") {
       wifipsk = request->arg(i);
+    }
+
+    else if (request->argName(i) == "ipmode") {
+      ipmode = request->arg(i).toInt();
+    }
+    else if (request->argName(i) == "wifiip") {
+      wifiip.fromString(request->arg(i));
+    }
+    else if (request->argName(i) == "wifimask") {
+      wifimask.fromString(request->arg(i));
+    }
+    else if (request->argName(i) == "wifigw") {
+      wifigw.fromString(request->arg(i));
     }
 
     else if (request->argName(i) == "webuser") {
@@ -1759,8 +1842,14 @@ void doSaveSetup(AsyncWebServerRequest *request) {
 
       if (wifipsk != "") {
         NewWifiWebMode = wifimode;
-        NewWifiAPSSID = wifissid;
-        NewWifiAPPSK = wifipsk;
+        NewWifiAPSSID  = wifissid;
+        NewWifiAPPSK   = wifipsk;
+      }
+
+      if (ipmode == 1) {
+        NewWifiAPIP   = wifiip;
+        NewWifiAPMask = wifimask;
+        NewWifiAPGW   = wifigw;
       }
     } else if ((wifimode == 2) && (wifissid != "")) {
       if ((wifipsk == "") && (wifissid == NewWifiSSID)) {
@@ -2667,6 +2756,9 @@ bool SaveWifiWebMode() {
         } else {
           wifiAPFile.println(NewWifiAPSSID);
           wifiAPFile.println(NewWifiAPPSK);
+          wifiAPFile.println(NewWifiAPIP.toString());
+          wifiAPFile.println(NewWifiAPMask.toString());
+          wifiAPFile.println(NewWifiAPGW.toString());
           wifiAPFile.close();
         }
   } else if (NewWifiWebMode == 2) {
@@ -2853,10 +2945,11 @@ void wifiweb_info() {
       GO.lcd.println();
       Serial.println();
 
+      GO.lcd.print("AP SSID: "); GO.lcd.println(WifiAPSSID);
+      GO.lcd.print("AP PSK: "); GO.lcd.println(WifiAPPSK);
+
       IPAddress myIP = WiFi.softAPIP();
       Serial.print("AP IP address: "); Serial.println(myIP);
-      GO.lcd.print("AP SSID: "); GO.lcd.println(WifiAPSSID);
-      GO.lcd.print("AP Password: "); GO.lcd.println(WifiAPPSK);
       GO.lcd.print("AP IP address: "); GO.lcd.println(myIP);
   }
   else if (WifiWebMode == 2) {
@@ -2879,9 +2972,9 @@ void wifiweb_info() {
 
       Serial.println();
       IPAddress myIP = WiFi.localIP();
-      Serial.println("IP address: ");
+      Serial.print("IP address: ");
       Serial.println(myIP);
-      GO.lcd.println("IP address: ");
+      GO.lcd.print("IP address: ");
       GO.lcd.println(myIP);
      
       printLocalTime();
@@ -2987,41 +3080,9 @@ bool wifi_init(bool interactive) {
       WifiAPSSID = ssid;
       WifiAPPSK = password;
 
-      path = "/WIFIAP.TXT";
-      Serial.print("Reading file: ");
-      Serial.println(path);
-      GO.lcd.print("Reading file: ");
-      GO.lcd.println(path);
-      File wifiAPFile = SD.open(path);
-      if (!wifiAPFile) {
-        Serial.println("Failed to open file for reading");
-        GO.lcd.println("Failed to open file for reading");
-
-        File wifiAPFile = SD.open(path, FILE_WRITE);
-        if (!wifiAPFile) {
-          Serial.println("Failed to open file for writing");
-          GO.lcd.println("Failed to open file for writing");
-        } else {
-          WifiAPSSID+="-";
-          WifiAPSSID+=String(random(0xffffff),HEX);
-          WifiAPPSK+="-";
-          WifiAPPSK+=String(random(65535),HEX);
-
-          wifiAPFile.println(WifiAPSSID);
-          wifiAPFile.println(WifiAPPSK);
-          wifiAPFile.close();
-        }
-      } else {
-        Serial.println("Read from file: ");
-        GO.lcd.println("Read from file: ");
-        while (wifiAPFile.available()) {
-          WifiAPSSID = wifiAPFile.readStringUntil('\n');
-          WifiAPSSID.replace("\r", "");
-          WifiAPPSK = wifiAPFile.readStringUntil('\n');
-          WifiAPPSK.replace("\r", "");
-          break;
-        }
-        wifiAPFile.close();
+      if (!GetWifiAPData(true)) {
+        WifiWebMode = 0;
+        return false;
       }
 
       WiFi.mode(WIFI_AP);
@@ -3037,10 +3098,11 @@ bool wifi_init(bool interactive) {
 
       IPAddress myIP = WiFi.softAPIP();
 
-      Serial.print("AP IP address: "); Serial.println(myIP);
       GO.lcd.println("AP started");
       GO.lcd.print("AP SSID: "); GO.lcd.println(WifiAPSSID);
-      GO.lcd.print("AP Password: "); GO.lcd.println(WifiAPPSK);
+      GO.lcd.print("AP PSK: "); GO.lcd.println(WifiAPPSK);
+
+      Serial.print("AP IP address: "); Serial.println(myIP);
       GO.lcd.print("AP IP address: "); GO.lcd.println(myIP);
 
       GO.lcd.println(" ");
@@ -3063,30 +3125,7 @@ bool wifi_init(bool interactive) {
         WifiWebMode = 0;
         return false;
       }
-/*
-      path = "/WIFI.TXT";
-      Serial.print("Reading file: ");
-      Serial.println(path);
-      GO.lcd.print("Reading file: ");
-      GO.lcd.println(path);
-      File wifiFile = SD.open(path);
-      if (!wifiFile) {
-        Serial.println("Failed to open file for reading");
-        GO.lcd.println("Failed to open file for reading");
-        WifiWebMode = 0;
-        return false;
-      }
-      Serial.println("Read from file: ");
-      GO.lcd.println("Read from file: ");
-      while (wifiFile.available()) {
-        WifiSSID = wifiFile.readStringUntil('\n');
-        WifiSSID.replace("\r", "");
-        WifiPSK = wifiFile.readStringUntil('\n');
-        WifiPSK.replace("\r", "");
-        break;
-      }
-      wifiFile.close();
-*/
+
       Serial.print("SSID: ");
       Serial.println(WifiSSID);
       Serial.print("PSK: ");
@@ -3170,9 +3209,9 @@ bool wifi_init(bool interactive) {
       WifiMask = calculateCIDRSubnet(WiFi.subnetCIDR());
       WifiGW = WiFi.gatewayIP();
 
-      Serial.println("IP address: ");
+      Serial.print("IP address: ");
       Serial.println(WiFi.localIP());
-      GO.lcd.println("IP address: ");
+      GO.lcd.print("IP address: ");
       GO.lcd.println(WiFi.localIP());
 
       GO.lcd.println(" ");
