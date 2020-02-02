@@ -36,10 +36,7 @@ void CGoMirror::begin(unsigned long baud) {
 }
 
 void CGoMirror::update() {
-/*
-    if (wifiweb)
-        wifiweb->handleClient();
-*/
+    handleWiFiWeb();
 
 #ifdef HAVE_GO
     GO.update();

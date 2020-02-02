@@ -10,6 +10,8 @@ extern bool showWiFiWeb();
 
 extern void SetWifiWebAppData(String directory);
 
+extern void handleWiFiWeb();
+
 extern bool LoadWifiWebMode();
 extern bool SaveWifiWebMode();
 

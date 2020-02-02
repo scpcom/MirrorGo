@@ -24,6 +24,7 @@
 #endif
 #include <ESPAsyncWebServer.h>
 #include <WebAuthentication.h>
+#include <DNSServer.h>
 
 
 #ifdef ESP32
@@ -58,6 +59,7 @@ typedef struct {
 
 
 
+const byte DNS_PORT = 53;
 const char* ssid = "odroidgo";
 const char* password = "odroidgo";
 
@@ -277,6 +279,9 @@ const char* goback_script = "<script>\n"
                       "</script>\n";
 
 
+bool dnsStarted = false;
+DNSServer dnsServer;
+
 String uploadPath = "";
 AsyncWebServer server(80);
 
@@ -362,42 +367,34 @@ bool getLocalTime(struct tm * info, uint32_t ms = 5000)
 }
 #endif
 
-String getLocalTimeString()
+String getTimeString(time_t t)
 {
   struct tm timeinfo;
   char buffer[26];
   String ret = "";
 
-  /* getLocalTime() uses delay() which is not suitable for async TCP */
-  time_t now;
-  time(&now);
-
-  if (!now) {
+  if (!t) {
     return ret;
   }
 
-  localtime_r(&now, &timeinfo);
+  localtime_r(&t, &timeinfo);
 
   strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", &timeinfo);
   ret = buffer;
   return ret;
 }
 
+String getLocalTimeString()
+{
+  /* getLocalTime() uses delay() which is not suitable for async TCP */
+  time_t now;
+  time(&now);
+  return getTimeString(now);
+}
+
 String getBrowserTimeString()
 {
-  struct tm timeinfo;
-  char buffer[26];
-  String ret = "";
-
-  if (!browserTime) {
-    return ret;
-  }
-
-  localtime_r(&browserTime, &timeinfo);
-
-  strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", &timeinfo);
-  ret = buffer;
-  return ret;
+  return getTimeString(browserTime);
 }
 
 String getContentType(AsyncWebServerRequest *request, String filename) {
@@ -1755,6 +1752,10 @@ String htmlDirEntry(File entry, bool shortUrl) {
     entryPath = entry.name();
     entryName = getLastElement(entryPath);
 
+    time_t t = entry.getLastWrite();
+    struct tm * tmstruct = localtime(&t);
+    String entryTime = getTimeString(t);
+
     if (entry.isDirectory()) {
       tree += F("<tr>");
       tree += F("<td data-value=\"");
@@ -1778,6 +1779,13 @@ String htmlDirEntry(File entry, bool shortUrl) {
       tree += entryName+"/";
 
       tree += F("</a></td>");
+
+      tree += F("<td class=\"dCol\" data-value=\"");
+      tree += entryTime;
+      tree += F("\">");
+      tree += entryTime;
+      tree += F("</td>");
+
       tree += F("<td class=\"dCol\" data-value=\"0\">-</td>");
       
       if (!webfileReadonly) {
@@ -1812,6 +1820,13 @@ String htmlDirEntry(File entry, bool shortUrl) {
       tree += entryName;
 
       tree += F("</a></td>");
+
+      tree += F("<td class=\"dCol\" data-value=\"");
+      tree += entryTime;
+      tree += F("\">");
+      tree += entryTime;
+      tree += F("</td>");
+
       tree += F("<td class=\"dCol\" data-value=\")");
       tree += file_size(entry.size());
       tree += F("\">");
@@ -1930,6 +1945,7 @@ void handleRoot(AsyncWebServerRequest *request) {
   } else {
     entryName = getLastElement(WifiWebAppData);
     entryPath = WifiWebAppData;
+    String entryTime = "";
 
       tree += F("<tr>");
       tree += F("<td data-value=\"");
@@ -1947,12 +1963,20 @@ void handleRoot(AsyncWebServerRequest *request) {
       tree += entryName+"/";
 
       tree += F("</a></td>");
+
+      tree += F("<td class=\"dCol\" data-value=\"");
+      tree += entryTime;
+      tree += F("\">");
+      tree += entryTime;
+      tree += F("</td>");
+
       tree += F("<td class=\"dCol\" data-value=\"0\">-</td>");
 
       tree += F("</tr>\n");
 
     entryName = "screen.bmp";
     entryPath = "/"+entryName;
+    entryTime = getLocalTimeString();
     
       if (entryPath == "/screen.bmp") {
       //MG.lcd.Save();
@@ -1979,6 +2003,12 @@ void handleRoot(AsyncWebServerRequest *request) {
 
       tree += F("</a></td>");
       
+      tree += F("<td class=\"dCol\" data-value=\"");
+      tree += entryTime;
+      tree += F("\">");
+      tree += entryTime;
+      tree += F("</td>");
+
       tree += F("<td class=\"dCol\" data-value=\")");
       tree += file_size(MG.lcd.GetBitmapSize());
       tree += F("\">");
@@ -2074,7 +2104,8 @@ void handleRoot(AsyncWebServerRequest *request) {
   webpage += F("<thead>\n");
   webpage += F("<tr class=\"header\" id=\"theader\">");
   webpage += F("<th onclick=\"sortTable(0);\">Name</th>");
-  webpage += F("<th class=\"dCol\" onclick=\"sortTable(1);\">Size</th>");
+  webpage += F("<th class=\"dCol\" onclick=\"sortTable(1);\">Last modified</th>");
+  webpage += F("<th class=\"dCol\" onclick=\"sortTable(2);\">Size</th>");
   webpage += F("<th>");
   if (directory == "/") {
     webpage += htmlButtonDirect("Restart", "restart",  "class='buttons' style=\"float: right;\"");
@@ -2540,6 +2571,10 @@ bool SaveWifiWebMode() {
 }
 
 void disableWifi() {
+  if (dnsStarted) {
+    dnsServer.stop();
+    dnsStarted = false;
+  }
   if (WifiWebMode) {
     //disconnect WiFi as it's no longer needed
     WiFi.disconnect(true);
@@ -2674,10 +2709,11 @@ void wifiweb_info() {
       Serial.println();
 
       Serial.println();
+      IPAddress myIP = WiFi.localIP();
       Serial.println("IP address: ");
-      Serial.println(WiFi.localIP());
+      Serial.println(myIP);
       GO.lcd.println("IP address: ");
-      GO.lcd.println(WiFi.localIP());
+      GO.lcd.println(myIP);
      
       printLocalTime();
 
@@ -2830,6 +2866,17 @@ bool wifi_init(bool interactive) {
       GO.lcd.print("AP SSID: "); GO.lcd.println(WifiAPSSID);
       GO.lcd.print("AP Password: "); GO.lcd.println(WifiAPPSK);
       GO.lcd.print("AP IP address: "); GO.lcd.println(myIP);
+
+      GO.lcd.println(" ");
+      Serial.println();
+
+      dnsStarted = dnsServer.start(DNS_PORT, "odroidgo.local", myIP);
+      if (dnsStarted) {
+        Serial.println("DNS responder started");
+        GO.lcd.println("DNS responder started");
+        Serial.println("You can connect via http://odroidgo.local");
+        GO.lcd.println("You can connect via http://odroidgo.local");
+      }
 
   } else if (WifiWebMode == 2) {
       int wifiIndex = 0;
@@ -3129,4 +3176,10 @@ bool showWiFiWeb() {
 
 void SetWifiWebAppData(String directory) {
     WifiWebAppData = directory;
+}
+
+void handleWiFiWeb() {
+    if (dnsStarted) {
+        dnsServer.processNextRequest();
+    }
 }
