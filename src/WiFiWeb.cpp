@@ -2900,9 +2900,13 @@ bool wifi_init(bool interactive) {
             if (wifiIndex < WifiCount) {
               if ((WifiSSID != WifiList[wifiIndex].SSID) || 
                   (WifiPSK  != WifiList[wifiIndex].PSK )) {
+                GO.lcd.println(" ");
+                Serial.println();
                 WifiSSID = WifiList[wifiIndex].SSID;
                 WifiPSK = WifiList[wifiIndex].PSK;
                 WiFi.disconnect();
+                Serial.print("SSID: ");
+                Serial.println(WifiSSID);
                 WiFi.begin(WifiSSID.c_str(), WifiPSK.c_str());
               }
             }
@@ -2913,13 +2917,16 @@ bool wifi_init(bool interactive) {
         GO.update();
         if (GO.BtnMenu.isPressed() == 1) {
             break;
+        } else if (GO.BtnSelect.isPressed() == 1) {
+            disableWifi();
+            break;
         }
 
         delay(250);
         GO.update();
         if (GO.BtnMenu.isPressed() == 1) {
             break;
-        } else if (MG.BtnSelect.isPressed() == 1) {
+        } else if (GO.BtnSelect.isPressed() == 1) {
             disableWifi();
             break;
         }
