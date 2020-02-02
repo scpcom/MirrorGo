@@ -38,8 +38,10 @@ uint8_t BtnMirror::read(void)
 
     ms = millis();
 
+#ifdef HAVE_BUTTON
     if ((!virtualPin) && btn)
         virtualPin = btn->isPressed();
+#endif
     pinVal = virtualPin;
     //virtualPin = 0;
 
@@ -75,8 +77,10 @@ uint8_t BtnMirror::readAxis()
 
     ms = millis();
 
+#ifdef HAVE_BUTTON
     if ((!virtualPin) && btn)
         virtualPin = btn->isAxisPressed();
+#endif
     val = virtualPin * 1980;
     //virtualPin = 0;
 

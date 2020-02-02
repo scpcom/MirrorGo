@@ -1,7 +1,11 @@
 #ifndef MirrorGo_h
 #define MirrorGo_h
 
+#ifdef ESP32
 #include <odroid_go.h>
+#define HAVE_GO
+#endif
+
 #include <LCDMirror.h>
 #include <SpkMirror.h>
 #include <BtnMirror.h>
@@ -26,9 +30,15 @@ class CGoMirror {
     BtnMirror BtnStart = BtnMirror(BUTTON_START, true, DEBOUNCE_MS);
 
     // LCD
+#ifdef ESP32
     LCDMirror lcd = LCDMirror(&GO.lcd);
     SpkMirror Speaker = SpkMirror(&GO.Speaker);
     BatMirror battery = BatMirror(&GO.battery);
+#else
+    LCDMirror lcd = LCDMirror(NULL);
+    SpkMirror Speaker = SpkMirror(NULL);
+    BatMirror battery = BatMirror(NULL);
+#endif
     LedMirror led = LedMirror(PIN_BLUE_LED);
 };
 

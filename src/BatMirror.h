@@ -2,7 +2,13 @@
 #define _BATMIRROR_H_
 
 #include <Arduino.h>
+
+#ifdef ESP32
 #include <utility/battery.h>
+#define HAVE_BATTERY
+#else
+#define Battery void
+#endif
 
 class BatMirror {
 public:

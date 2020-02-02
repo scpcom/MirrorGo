@@ -1,7 +1,14 @@
 #ifndef _SpkMirror_H_
 #define _SpkMirror_H_
 
+#include <Arduino.h>
+
+#ifdef ESP32
 #include <utility/Speaker.h>
+#define HAVE_SPEAKER
+#else
+#define SPEAKER void
+#endif
 
 class SpkMirror {
 public:

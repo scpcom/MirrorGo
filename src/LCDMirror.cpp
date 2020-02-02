@@ -21,7 +21,13 @@
   Modified by SCP (mirror graphics into memory bitmap)
  ****************************************************/
 
+#ifdef ESP32
 #include <odroid_go.h>
+#define HAVE_JPEGDEC
+#define HAVE_QRCODE
+#else
+#define log_e(format, ...)
+#endif
 
 #include "LCDMirror.h"
 
@@ -49,8 +55,13 @@ inline void LCDMirror::mirror_end(void) {
 ***************************************************************************************/
 LCDMirror::LCDMirror(ILI9341 *lcd) {
   _lcd = lcd;
+#ifdef HAVE_LCD
   _width = _lcd->width();
   _height = _lcd->height();
+#else
+  _width = 320;
+  _height = 240;
+#endif
 
   rotation = 0;
   cursor_y = cursor_x = 0;
@@ -122,14 +133,21 @@ void LCDMirror::begin(void) { init(); }
 ** Description:             Reset, then initialise the TFT display registers
 ***************************************************************************************/
 void LCDMirror::init(void) {
+#ifdef HAVE_LCD
   _width = _lcd->width();
   _height = _lcd->height();
+#else
+  _width = 320;
+  _height = 240;
+#endif
   
   inTransaction = false;
   locked = true;
   _locked = 0;
 
+#ifdef HAVE_LCD
   setRotation(_lcd->getRotation());
+#endif
   
   mirror_size = BITMAP_FILEHEADER_SIZE+BITMAP_HEADER_SIZE+(_width*_height*2);
   mirror_bitmap = (RGB565_BITMAP*)bm_malloc(mirror_size);
@@ -755,13 +773,17 @@ void LCDMirror::drawBitmap(int16_t x, int16_t y, const uint8_t *bitmap, int16_t 
 void LCDMirror::setCursor(int16_t x, int16_t y) {
   cursor_x = x;
   cursor_y = y;
+#ifdef HAVE_LCD
   _lcd->setCursor(x, y);
+#endif
 }
 
 void LCDMirror::setCharCursor(int16_t x, int16_t y) {
   cursor_x = x * 6 * textsize;
   cursor_y = y * 8 * textsize;
+#ifdef HAVE_LCD
   _lcd->setCharCursor(x, y);
+#endif
 }
 /***************************************************************************************
 ** Function name:           setCursor
@@ -771,7 +793,9 @@ void LCDMirror::setCursor(int16_t x, int16_t y, uint8_t font) {
   textfont = font;
   cursor_x = x;
   cursor_y = y;
+#ifdef HAVE_LCD
   _lcd->setCursor(x, y, font);
+#endif
 }
 
 /***************************************************************************************
@@ -793,7 +817,9 @@ void LCDMirror::setTextSize(uint8_t s) {
   gbkCharWidth = ascCharHeigth;
   gbkCharHeight = gbkCharWidth;
   
+#ifdef HAVE_LCD
   _lcd->setTextSize(s);
+#endif
 }
 
 /***************************************************************************************
@@ -805,7 +831,9 @@ void LCDMirror::setTextColor(uint16_t c) {
   // For 'transparent' background, we'll set the bg
   // to the same as fg instead of using a flag
   textcolor = textbgcolor = c;
+#ifdef HAVE_LCD
   _lcd->setTextColor(c);
+#endif
 }
 
 /***************************************************************************************
@@ -815,7 +843,9 @@ void LCDMirror::setTextColor(uint16_t c) {
 void LCDMirror::setTextColor(uint16_t c, uint16_t b) {
   textcolor = c;
   textbgcolor = b;
+#ifdef HAVE_LCD
    _lcd->setTextColor(c,b);
+#endif
 }
 
 /***************************************************************************************
@@ -824,7 +854,9 @@ void LCDMirror::setTextColor(uint16_t c, uint16_t b) {
 ***************************************************************************************/
 void LCDMirror::setTextWrap(boolean w) {
   textwrap = w;
+#ifdef HAVE_LCD
   _lcd->setTextWrap(w);
+#endif
 }
 
 /***************************************************************************************
@@ -833,7 +865,9 @@ void LCDMirror::setTextWrap(boolean w) {
 ***************************************************************************************/
 void LCDMirror::setTextDatum(uint8_t d) {
   textdatum = d;
+#ifdef HAVE_LCD
   _lcd->setTextDatum(d);
+#endif
 }
 
 /***************************************************************************************
@@ -843,7 +877,9 @@ void LCDMirror::setTextDatum(uint8_t d) {
 ***************************************************************************************/
 void LCDMirror::setTextPadding(uint16_t x_width) {
   padX = x_width;
+#ifdef HAVE_LCD
   _lcd->setTextPadding(x_width);
+#endif
 }
 
 /***************************************************************************************
@@ -969,7 +1005,9 @@ int16_t LCDMirror::fontHeight(int16_t font) {
 ***************************************************************************************/
 void LCDMirror::drawChar(int32_t x, int32_t y, unsigned char c, uint32_t color,
                        uint32_t bg, uint8_t size) {
+#ifdef HAVE_LCD
   _lcd->drawChar(x, y, c, color, bg, size);
+#endif
 
   if ((x >= (int16_t)_width) ||   // Clip right
       (y >= (int16_t)_height) ||  // Clip bottom
@@ -1225,7 +1263,9 @@ void LCDMirror::setWindow(int16_t x0, int16_t y0, int16_t x1, int16_t y1) {
 // This is for the ESP32
 void LCDMirror::setAddrWindow(int32_t x0, int32_t y0, int32_t x1,
                                    int32_t y1) {
+#ifdef HAVE_LCD
   _lcd->setAddrWindow(x0, y0, x1, y1);
+#endif
   mirror_setAddrWindow(x0, y0, x1, y1);
 }
 
@@ -1281,7 +1321,9 @@ inline void LCDMirror::mirror_setAddrWindow(int32_t x0, int32_t y0, int32_t x1,
 ** Description:             push a single pixel at an arbitrary position
 ***************************************************************************************/
 void LCDMirror::drawPixel(uint32_t x, uint32_t y, uint32_t color) {
+#ifdef HAVE_LCD
   _lcd->drawPixel(x, y, color);
+#endif
   
   // Faster range checking, possible because x and y are unsigned
   if ((x >= _width) || (y >= _height))
@@ -1340,7 +1382,9 @@ void LCDMirror::drawPixel(uint32_t x, uint32_t y, uint32_t color) {
 ** Description:             push a single pixel
 ***************************************************************************************/
 void LCDMirror::pushColor(uint16_t color) {
+#ifdef HAVE_LCD
   _lcd->pushColor(color);
+#endif
   
   if ((mirror_cx < _width) && (mirror_cy < _height)) {
   mirror_begin();
@@ -1360,7 +1404,9 @@ void LCDMirror::pushColor(uint16_t color) {
 ** Description:             push a single colour to "len" pixels
 ***************************************************************************************/
 void LCDMirror::pushColor(uint16_t color, uint16_t len) {
+#ifdef HAVE_LCD
   _lcd->pushColor(color, len);
+#endif
   
   mirror_begin();
 
@@ -1381,7 +1427,9 @@ void LCDMirror::pushColor(uint16_t color, uint16_t len) {
 // a time (BMP examples read in small chunks due to limited RAM).
 
 void LCDMirror::pushColors(uint16_t *data, uint8_t len) {
+#ifdef HAVE_LCD
   _lcd->pushColors(data, len);
+#endif
   
   mirror_begin();
 
@@ -1401,7 +1449,9 @@ void LCDMirror::pushColors(uint16_t *data, uint8_t len) {
 ***************************************************************************************/
 // Assumed that setWindow() has previously been called
 void LCDMirror::pushColors(uint8_t *data, uint32_t len) {
+#ifdef HAVE_LCD
   _lcd->pushColors(data, len);
+#endif
 
   mirror_begin();
 
@@ -1431,7 +1481,9 @@ void LCDMirror::pushColors(uint8_t *data, uint32_t len) {
 ***************************************************************************************/
 void LCDMirror::pushRect(uint32_t x, uint32_t y, uint32_t w, uint32_t h,
                        uint16_t *data) {
+#ifdef HAVE_LCD
   _lcd->pushRect(x, y, w, h, data);
+#endif
   
   if ((x > _width) || (y > _height) || (w == 0) || (h == 0))
     return;
@@ -1468,7 +1520,9 @@ void LCDMirror::pushRect(uint32_t x, uint32_t y, uint32_t w, uint32_t h,
 // an eficient FastH/V Line draw routine for line segments of 2 pixels or more
 void LCDMirror::drawLine(int32_t x0, int32_t y0, int32_t x1, int32_t y1,
                        uint32_t color) {
+#ifdef HAVE_LCD
   _lcd->drawLine(x0, y0, x1, y1, color);
+#endif
   
   mirror_begin();
   inTransaction = true;
@@ -1536,7 +1590,9 @@ void LCDMirror::drawLine(int32_t x0, int32_t y0, int32_t x1, int32_t y1,
 ** Description:             draw a vertical line
 ***************************************************************************************/
 void LCDMirror::drawFastVLine(int32_t x, int32_t y, int32_t h, uint32_t color) {
+#ifdef HAVE_LCD
   _lcd->drawFastVLine(x, y, h, color);
+#endif
   
   if ((x < 0) || (y < 0))
     return;
@@ -1567,7 +1623,9 @@ void LCDMirror::drawFastVLine(int32_t x, int32_t y, int32_t h, uint32_t color) {
 ** Description:             draw a horizontal line
 ***************************************************************************************/
 void LCDMirror::drawFastHLine(int32_t x, int32_t y, int32_t w, uint32_t color) {
+#ifdef HAVE_LCD
   _lcd->drawFastHLine(x, y, w, color);
+#endif
   
   if ((x < 0) || (y < 0))
     return;
@@ -1599,7 +1657,9 @@ void LCDMirror::drawFastHLine(int32_t x, int32_t y, int32_t w, uint32_t color) {
 ***************************************************************************************/
 void LCDMirror::fillRect(int32_t x, int32_t y, int32_t w, int32_t h,
                        uint32_t color) {
+#ifdef HAVE_LCD
   _lcd->fillRect(x, y, w, h, color);
+#endif
 
   if ((x < 0) || (y < 0))
     return;
@@ -1640,7 +1700,9 @@ uint16_t LCDMirror::color565(uint8_t r, uint8_t g, uint8_t b) {
 *normal
 ***************************************************************************************/
 void LCDMirror::invertDisplay(boolean i) {
+#ifdef HAVE_LCD
   _lcd->invertDisplay(i);
+#endif
 }
 
 /***************************************************************************************
@@ -1733,15 +1795,21 @@ size_t LCDMirror::write(uint8_t utf8) {
     if (utf8 == '\n') {
       cursor_y += height;
       cursor_x = 0;
+#ifdef HAVE_LCD
       _lcd->setCursor(cursor_x, cursor_y);
+#endif
     } else {
       if (textwrap && (cursor_x + width * textsize > _width)) {
         cursor_y += height;
         cursor_x = 0;
+#ifdef HAVE_LCD
         _lcd->setCursor(cursor_x, cursor_y);
+#endif
       }
       cursor_x += drawChar(uniCode, cursor_x, cursor_y, textfont);
+#ifdef HAVE_LCD
       _lcd->setCursor(cursor_x, cursor_y);
+#endif
     }
 
 //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1753,7 +1821,9 @@ size_t LCDMirror::write(uint8_t utf8) {
       cursor_x = 0;
       cursor_y +=
           (int16_t)textsize * (uint8_t)pgm_read_byte(&gfxFont->yAdvance);
+#ifdef HAVE_LCD
       _lcd->setCursor(cursor_x, cursor_y);
+#endif
     } else if (uniCode != '\r') {
       if (uniCode > (uint8_t)pgm_read_byte(&gfxFont->last))
         uniCode = pgm_read_byte(&gfxFont->first);
@@ -1770,13 +1840,17 @@ size_t LCDMirror::write(uint8_t utf8) {
             cursor_x = 0;
             cursor_y +=
                 (int16_t)textsize * (uint8_t)pgm_read_byte(&gfxFont->yAdvance);
+#ifdef HAVE_LCD
             _lcd->setCursor(cursor_x, cursor_y);
+#endif
           }
           drawChar(cursor_x, cursor_y, uniCode, textcolor, textbgcolor,
                    textsize);
         }
         cursor_x += pgm_read_byte(&glyph->xAdvance) * (int16_t)textsize;
+#ifdef HAVE_LCD
         _lcd->setCursor(cursor_x, cursor_y);
+#endif
       }
     }
   }
@@ -1950,7 +2024,9 @@ int16_t LCDMirror::drawChar(unsigned int uniCode, int x, int y, int font) {
       TFT_CS_H;
       mirror_end();
 
+#ifdef HAVE_LCD
       _lcd->drawChar(uniCode, x, y, font);
+#endif
     }
   }
 
@@ -2022,7 +2098,9 @@ int16_t LCDMirror::drawChar(unsigned int uniCode, int x, int y, int font) {
       TFT_CS_H;
       mirror_end();
 
+#ifdef HAVE_LCD
       _lcd->drawChar(uniCode, x, y, font);
+#endif
     } else // Text colour != background && textsize = 1
            // so use faster drawing of characters and background using block
            // write
@@ -2071,7 +2149,9 @@ int16_t LCDMirror::drawChar(unsigned int uniCode, int x, int y, int font) {
       TFT_CS_H;
       mirror_end();
 
+#ifdef HAVE_LCD
       _lcd->drawChar(uniCode, x, y, font);
+#endif
     }
   }
 // End of RLE font rendering
@@ -2468,7 +2548,9 @@ void LCDMirror::setFreeFont(const GFXfont *f) {
       glyph_bb = bb;
   }
   
+#ifdef HAVE_LCD
   _lcd->setFreeFont(f);
+#endif
 }
 
 /***************************************************************************************
@@ -2478,7 +2560,9 @@ void LCDMirror::setFreeFont(const GFXfont *f) {
 void LCDMirror::setTextFont(uint8_t f) {
   textfont = (f > 0) ? f : 1; // Don't allow font 0
   gfxFont = NULL;
+#ifdef HAVE_LCD
   _lcd->setTextFont(f);
+#endif
 }
 
 #else
@@ -2497,14 +2581,18 @@ void LCDMirror::setFreeFont(uint8_t font) { setTextFont(font); }
 ***************************************************************************************/
 void LCDMirror::setTextFont(uint8_t f) {
   textfont = (f > 0) ? f : 1; // Don't allow font 0
+#ifdef HAVE_LCD
    _lcd->setTextFont(f);
+#endif
 }
 
 #endif
 
 //-----add-----
 void LCDMirror::startWrite(void) {
+#ifdef HAVE_LCD
   _lcd->startWrite();
+#endif
   mirror_begin();
   TFT_CS_L;
 }
@@ -2512,18 +2600,24 @@ void LCDMirror::startWrite(void) {
 void LCDMirror::endWrite(void) {
   TFT_CS_H;
   mirror_end();
+#ifdef HAVE_LCD
   _lcd->endWrite();
+#endif
 }
 
 void LCDMirror::writePixel(uint16_t color) {
   mirror_write16(color);
+#ifdef HAVE_LCD
    _lcd->writePixel(color);
+#endif
 }
 
 void LCDMirror::writePixels(uint16_t *colors, uint32_t len) {
   mirror_writePixels((uint8_t *)colors, len * 2);
   // mirror_writeBytes((uint8_t *)colors, len * 2);
+#ifdef HAVE_LCD
   _lcd->writePixels(colors, len);
+#endif
 }
 // Draw a PROGMEM-resident 1-bit image at the specified (x,y) position,
 // using the specified foreground color (unset bits are transparent).
@@ -2538,11 +2632,15 @@ void LCDMirror::progressBar(int x, int y, int w, int h, uint8_t val) {
 }
 
 void LCDMirror::setBrightness(uint8_t brightness) {
+#ifdef HAVE_LCD
   _lcd->setBrightness(brightness);
+#endif
 }
 
 void LCDMirror::sleep() {
+#ifdef HAVE_LCD
   _lcd->sleep();
+#endif
 }
 
 void LCDMirror::clearDisplay() { fillScreen(0x0000); }
@@ -2551,6 +2649,7 @@ void LCDMirror::clear() { clearDisplay(); }
 
 void LCDMirror::display() {}
 
+#ifdef HAVE_JPEGDEC
 #include "jpegdec.h"
 
 static uint32_t jpgWrite(JDEC *decoder, void *bitmap, JRECT *rect) {
@@ -2623,7 +2722,7 @@ static uint32_t jpgWrite(JDEC *decoder, void *bitmap, JRECT *rect) {
   tft->endWrite();
   return 1;
 }
-
+#endif
 
 void LCDMirror::drawJpg(const uint8_t *jpg_data, size_t jpg_len, uint16_t x,
                       uint16_t y, uint16_t maxWidth, uint16_t maxHeight,
@@ -2647,6 +2746,7 @@ void LCDMirror::mirror_drawJpg(const uint8_t *jpg_data, size_t jpg_len, uint16_t
     return;
   }
 
+#ifdef HAVE_JPEGDEC
   jpg_file_decoder_t jpeg;
 
   if (!maxWidth) {
@@ -2669,6 +2769,7 @@ void LCDMirror::mirror_drawJpg(const uint8_t *jpg_data, size_t jpg_len, uint16_t
   jpeg.tft = this;
 
   jpgDecode(&jpeg, jpgRead, jpgWrite);
+#endif
 }
 
 void LCDMirror::mirror_drawJpgFile(fs::FS &fs, const char *path, uint16_t x, uint16_t y,
@@ -2679,12 +2780,13 @@ void LCDMirror::mirror_drawJpgFile(fs::FS &fs, const char *path, uint16_t x, uin
     return;
   }
 
-  File file = fs.open(path);
+  File file = fs.open(path, FILE_READ);
   if (!file) {
     log_e("Failed to open file for reading");
     return;
   }
 
+#ifdef HAVE_JPEGDEC
   jpg_file_decoder_t jpeg;
 
   if (!maxWidth) {
@@ -2707,14 +2809,18 @@ void LCDMirror::mirror_drawJpgFile(fs::FS &fs, const char *path, uint16_t x, uin
   jpeg.tft = this;
 
   jpgDecode(&jpeg, jpgReadFile, jpgWrite);
+#endif
 
   file.close();
 }
 
 
+#ifdef HAVE_QRCODE
 #include "utility/qrcode.h"
+#endif
 void LCDMirror::qrcode(const char *string, uint16_t x, uint16_t y, uint8_t width, uint8_t version) {
   
+#ifdef HAVE_QRCODE
   // Create the QR code
   QRCode qrcode;
   uint8_t qrcodeData[qrcode_getBufferSize(version)];
@@ -2733,13 +2839,16 @@ void LCDMirror::qrcode(const char *string, uint16_t x, uint16_t y, uint8_t width
       if (q) fillRect(x * thickness + xOffset, y * thickness + yOffset, thickness, thickness, TFT_BLACK);
     }
   }
+#endif
 }
 
 void LCDMirror::qrcode(const String &string, uint16_t x, uint16_t y, uint8_t width, uint8_t version) {
+#ifdef HAVE_QRCODE
   int16_t len = string.length() + 2;
   char buffer[len];
   string.toCharArray(buffer, len);
   qrcode(buffer, x, y, width, version);
+#endif
 }
 
 /**************************************************************************
@@ -2817,11 +2926,11 @@ bool LCDMirror::initHzk16(boolean use, const char *HZK16Path,
   switch (hzk16Type) {
   case ExternalHzk16: {
     if (pHzk16File == NULL) {
-      Hzk16File = SD.open(HZK16Path);
+      Hzk16File = SD.open(HZK16Path, FILE_READ);
       pHzk16File = &Hzk16File;
     }
     if (pAsc16File == NULL) {
-      Asc16File = SD.open(ASC16Path);
+      Asc16File = SD.open(ASC16Path, FILE_READ);
       pAsc16File = &Asc16File;
     }
     hzkBufCount = 0;

@@ -10,6 +10,8 @@
  * JPEG
  * */
 
+#ifdef ESP32
+
 #include "jpegdec.h"
 
 #if ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_ERROR
@@ -83,3 +85,4 @@ bool jpgDecode(jpg_file_decoder_t *jpeg,
   return true;
 }
 
+#endif //ESP32

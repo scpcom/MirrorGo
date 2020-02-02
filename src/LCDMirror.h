@@ -25,10 +25,19 @@
 #include <Print.h>
 #include <pgmspace.h>
 
+#ifdef ESP32
 #include "utility/Display.h"
+#define HAVE_LCD
+#else
+#define ILI9341 void
+#endif
 #include "bmpheader.h"
 
+#ifdef ESP32
 #define bm_malloc(size) heap_caps_malloc(size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT)
+#else
+#define bm_malloc(size) malloc(size)
+#endif
 
 typedef struct {
   char FileHeader[BITMAP_FILEHEADER_SIZE];
@@ -714,13 +723,6 @@ private:
   int32_t mirror_x0, mirror_y0, mirror_x1, mirror_y1;
   int32_t mirror_cx, mirror_cy;
 };
-
-#ifndef max
-#define max(a, b) (((a) > (b)) ? (a) : (b))
-#endif
-#ifndef min
-#define min(a, b) (((a) < (b)) ? (a) : (b))
-#endif
 
 #endif
 

@@ -2,6 +2,10 @@
 #include <WiFiWeb.h>
 #include <MirrorGo.h>
 
+#ifndef ESP32
+#define GO MG
+#endif
+
 #ifdef ESP32
 #include <WiFi.h>
 #include <WiFiClient.h>
@@ -10,19 +14,27 @@
 #include <AsyncTCP.h>
 #include <esp_task_wdt.h>
 #elif defined(ESP8266)
+#include <SD.h>
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <ESP8266mDNS.h>
 #include <ESP8266WiFiAP.h>
 #include <ESPAsyncTCP.h>
+#define SD_CS_PIN SS
 #endif
 #include <ESPAsyncWebServer.h>
 #include <WebAuthentication.h>
 
 
+#ifdef ESP32
 #define bm_check_integrity(print_errors) heap_caps_check_integrity(MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT, print_errors)
 #define bm_malloc(size) heap_caps_malloc(size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT)
 #define bm_free(p) heap_caps_free(p)
+#else
+inline bool bm_check_integrity(bool print_errors) { return true; }
+#define bm_malloc(size) malloc(size)
+#define bm_free(p) free(p)
+#endif
 
 
 typedef struct {
@@ -333,6 +345,23 @@ String freq_hz(int64_t hz) {
   return str_size(hz, 1000, "Hz");
 }
 
+#ifndef ESP32
+bool getLocalTime(struct tm * info, uint32_t ms = 5000)
+{
+    uint32_t start = millis();
+    time_t now;
+    while((millis()-start) <= ms) {
+        time(&now);
+        localtime_r(&now, info);
+        if(info->tm_year > (2016 - 1900)){
+            return true;
+        }
+        delay(10);
+    }
+    return false;
+}
+#endif
+
 String getLocalTimeString()
 {
   struct tm timeinfo;
@@ -472,7 +501,7 @@ bool handleLogin(AsyncWebServerRequest *request) {
 
 void handleNotFound(AsyncWebServerRequest *request) {
   String webpage = "";
-  webpage += F(header);
+  webpage += header;
   webpage += F("<hr>File Not Found<br>");
   webpage += F("<br>URI:");
   webpage += request->url();
@@ -485,7 +514,7 @@ void handleNotFound(AsyncWebServerRequest *request) {
     webpage += request->argName(i) + ": " + request->arg(i) + "<br>";
   }
   webpage += F("<br><button class='buttons' onclick=\"location.href='/';\">OK</button>");
-  webpage += F(footer);
+  webpage += footer;
   request->send(404, "text/html", webpage);
 }
 
@@ -499,17 +528,17 @@ void doMkdir(AsyncWebServerRequest *request) {
   }
 
   String webpage = "";
-  webpage += F(header);
+  webpage += header;
   String path = "";
   String dirName = "";
 
   for (uint8_t i = 0; i < request->args(); i++) {
     if (request->argName(i) == "dirName") {
-      Serial.printf("Dir Name: %s\n", request->arg(i));
+      Serial.printf("Dir Name: %s\n", request->arg(i).c_str());
       dirName =  request->arg(i);
     }
     if (request->argName(i) == "path") {
-      Serial.printf("Path: %s\n", request->arg(i));
+      Serial.printf("Path: %s\n", request->arg(i).c_str());
       path = request->arg(i);
     }
 
@@ -525,7 +554,7 @@ void doMkdir(AsyncWebServerRequest *request) {
 
     webpage += path;
 
-    Serial.printf("Creating Dir: %s\n", path);
+    Serial.printf("Creating Dir: %s\n", path.c_str());
     if (SD.mkdir(path)) {
       webpage += F("<br>Dir created<br>");
     } else {
@@ -537,7 +566,7 @@ void doMkdir(AsyncWebServerRequest *request) {
   }
 
   webpage += F("<br><button class='buttons' onclick=\"location.href='/';\">OK</button>");
-  webpage += F(footer);
+  webpage += footer;
   request->send(200, "text/html", webpage);
 }
 
@@ -551,10 +580,10 @@ void doDelete(AsyncWebServerRequest *request) {
   }
 
   String webpage = "";
-  webpage += F(header);
+  webpage += header;
   for (uint8_t i = 0; i < request->args(); i++) {
     if (request->argName(i) == "file") {
-      Serial.printf("Deleting file: %s\n", request->arg(i));
+      Serial.printf("Deleting file: %s\n", request->arg(i).c_str());
       webpage += F("<hr>Deleting file: <br>");
       webpage += request->arg(i);
       if (SD.remove(request->arg(i))) {
@@ -564,7 +593,7 @@ void doDelete(AsyncWebServerRequest *request) {
       }
     }
     if (request->argName(i) == "folder") {
-      Serial.printf("Removing Dir: %s\n", request->arg(i));
+      Serial.printf("Removing Dir: %s\n", request->arg(i).c_str());
       webpage += F("<hr>Removing Dir: <br>");
       webpage += request->arg(i);
       if (SD.rmdir(request->arg(i))) {
@@ -575,7 +604,7 @@ void doDelete(AsyncWebServerRequest *request) {
     }
   }
   webpage += F("<br><button class='buttons' onclick=\"location.href='/';\">OK</button>");
-  webpage += F(footer);
+  webpage += footer;
   request->send(200, "text/html", webpage);
 }
 
@@ -589,7 +618,7 @@ void deleteConfirm(AsyncWebServerRequest *request) {
   }
 
   String webpage = "";
-  webpage += F(header);
+  webpage += header;
   for (uint8_t i = 0; i < request->args(); i++) {
     if (request->argName(i) == "file") {
       webpage += F("<hr>Do you want to delete the file:<br>");
@@ -609,7 +638,7 @@ void deleteConfirm(AsyncWebServerRequest *request) {
   }
 
   webpage += F("<button class='buttons' onclick='window.history.back();'>No</button>");
-  webpage += F(footer);
+  webpage += footer;
   request->send(200, "text/html", webpage);
 }
 
@@ -664,23 +693,23 @@ void handleFileUpload(AsyncWebServerRequest *request, const String& filename, si
       Serial.print("Upload Size: "); Serial.println(UploadTotalSize);
 
       String webpage = "";
-      webpage += F(header);
+      webpage += header;
       webpage += F("<hr>File was successfully uploaded<br>");
       webpage += F("Uploaded File Name: ");
       webpage += filename + "<br>";
       webpage += F("File Size: ");
       webpage += file_size(UploadTotalSize) + "<br>";
       webpage += "<button class='buttons' onclick='window.history.back();'>OK</button>";
-      webpage += F(footer);
+      webpage += footer;
       request->send(200, "text/html", webpage);
     }
     else
     {
       String webpage = "";
-      webpage += F(header);
+      webpage += header;
       webpage += F("<hr>Could Not Create Uploaded File (write-protected?)<br>");
       webpage += "<button class='buttons' onclick='window.history.back();'>OK</button>";
-      webpage += F(footer);
+      webpage += footer;
       request->send(200, "text/html", webpage);
     }
   }
@@ -810,6 +839,7 @@ void FillMemInfo(MemInfo* mi) {
 
   mi->Flash.MaxAlloc = 0;
 
+#ifdef ESP32
   mi->Psram.Size = ESP.getPsramSize();
 
   mi->Psram.Free = ESP.getFreePsram();
@@ -817,7 +847,17 @@ void FillMemInfo(MemInfo* mi) {
   mi->Psram.MinFree = ESP.getMinFreePsram();
 
   mi->Psram.MaxAlloc = ESP.getMaxAllocPsram();
+#else
+  mi->Psram.Size = 0;
 
+  mi->Psram.Free = 0;
+
+  mi->Psram.MinFree = 0;
+
+  mi->Psram.MaxAlloc = 0;
+#endif
+
+#ifdef ESP32
   mi->Heap.Size = ESP.getHeapSize();
 
   mi->Heap.Free = ESP.getFreeHeap();
@@ -825,6 +865,23 @@ void FillMemInfo(MemInfo* mi) {
   mi->Heap.MinFree = ESP.getMinFreeHeap();
 
   mi->Heap.MaxAlloc = ESP.getMaxAllocHeap();
+#elif defined(ESP8266)
+  mi->Heap.Size = 80*1024;
+
+  mi->Heap.Free = ESP.getFreeHeap();
+
+  mi->Heap.MinFree = 0;
+
+  mi->Heap.MaxAlloc = ESP.getMaxFreeBlockSize();
+#else
+  mi->Heap.Size = 0;
+
+  mi->Heap.Free = 0;
+
+  mi->Heap.MinFree = 0;
+
+  mi->Heap.MaxAlloc = 0;
+#endif
 }
 
 String htmlMemTable(MemInfo* mi) {
@@ -909,7 +966,7 @@ void handleSysInfo(AsyncWebServerRequest *request) {
 
   FillMemInfo(&memnow);
 
-  webpage += F(header);
+  webpage += header;
   webpage.replace("Web FileBrowser", "System Information");
 
   webpage += F("<table>\n");
@@ -935,13 +992,16 @@ void handleSysInfo(AsyncWebServerRequest *request) {
 #endif
 
   webpage += F("<td class=\"dCol\" data-value=\"0\">");
+#ifdef ESP32
   webpage += ESP.getChipRevision();
+#endif
   webpage += F("</td>");
 
+  webpage += F("<td class=\"dCol\" data-value=\"0\">");
+#ifdef ESP32
   uint64_t _chipmacid = ESP.getEfuseMac();
   uint8_t *_chipmac = (uint8_t *)&_chipmacid;
 
-  webpage += F("<td class=\"dCol\" data-value=\"0\">");
   webpage += String(_chipmac[0], HEX);
   webpage += F(":");
   webpage += String(_chipmac[1], HEX);
@@ -953,6 +1013,7 @@ void handleSysInfo(AsyncWebServerRequest *request) {
   webpage += String(_chipmac[4], HEX);
   webpage += F(":");
   webpage += String(_chipmac[5], HEX);
+#endif
   webpage += F("</td>");
 
   webpage += F("<td class=\"dCol\" data-value=\"0\">");
@@ -974,12 +1035,14 @@ void handleSysInfo(AsyncWebServerRequest *request) {
       case FM_DOUT: // 0x03,
         webpage += F("DOUT");
         break;
+#ifdef ESP32
       case FM_FAST_READ: // 0x04,
         webpage += F("Fast read");
         break;
       case FM_SLOW_READ: // 0x05,
         webpage += F("Slow read");
         break;
+#endif
       case FM_UNKNOWN: // 0xff
         webpage += F("Unknown");
         break;
@@ -1009,7 +1072,7 @@ void handleSysInfo(AsyncWebServerRequest *request) {
   webpage += F("}\n");
   webpage += F("</script>\n");
 
-  webpage += F(footer);
+  webpage += footer;
 
   webpage.replace("WiFi Web - ", "<a href=\"/\">Home</a> - <a href=\"/syssetup\" onclick=\"return add_time(this);\">Setup</a> - WiFi Web - ");
 
@@ -1153,7 +1216,7 @@ void handleSysSetup(AsyncWebServerRequest *request) {
     }
   }
 
-  webpage += F(header);
+  webpage += header;
   webpage.replace("Web FileBrowser", "System Setup");
 
   webpage += F("<script>\n");
@@ -1435,7 +1498,7 @@ void handleSysSetup(AsyncWebServerRequest *request) {
 
   webpage += F("</table>\n");
 
-  webpage += F(footer);
+  webpage += footer;
 
   webpage.replace("WiFi Web - ", "<a href=\"/sysinfo\">System Information</a> - <a href=\"/\">Home</a> - WiFi Web - ");
 
@@ -1447,7 +1510,7 @@ void doSaveSetup(AsyncWebServerRequest *request) {
     return;
 
   String webpage = "";
-  webpage += F(header);
+  webpage += header;
   int8_t wifimode = -1;
   String wifissid = "";
   String wifipsk = "";
@@ -1778,7 +1841,7 @@ void handleRoot(AsyncWebServerRequest *request) {
   String entryName = "";
   String entryPath = "";
   String tree = "";
-  char* c_tree;
+  char* c_tree = NULL;
   size_t c_len = 0;
   bool emptyFolder = true;
   bool bigFolder = false;
@@ -1935,7 +1998,7 @@ void handleRoot(AsyncWebServerRequest *request) {
 
   String webpage = "";
 
-  webpage += F(header);
+  webpage += header;
   if (directory == "/") {
     webpage.replace("Web FileBrowser", "Remote Console");
     webpage += F("<h1 id=\"header\">Remote Console");
@@ -2005,7 +2068,7 @@ void handleRoot(AsyncWebServerRequest *request) {
     }
   }
 
-  webpage += F(script);
+  webpage += script;
 
   webpage += F("<table>\n");
   webpage += F("<thead>\n");
@@ -2033,9 +2096,6 @@ void handleRoot(AsyncWebServerRequest *request) {
 
   webpage += F("</tbody>\n");
   webpage += F("</table>\n");
-  if (bigFolder) {
-    webpage += F("<p>(Folder too big)</p>\n");
-  }
   webpage += F("<hr>");
 
   if (directory == "/") {
@@ -2167,7 +2227,7 @@ void handleRoot(AsyncWebServerRequest *request) {
     webpage += F("<br>");
   }
 
-  webpage += F(footer_script);
+  webpage += footer_script;
 
   webpage += F("<script>\n");
   webpage += F("function add_time(link)\n");
@@ -2177,16 +2237,25 @@ void handleRoot(AsyncWebServerRequest *request) {
   webpage += F("}\n");
   webpage += F("</script>\n");
 
-  webpage += F(footer);
+  webpage += footer;
 
   if (directory == "/") {
     webpage.replace("WiFi Web - ", "<a href=\"/sysinfo\">System Information</a> - <a href=\"/syssetup\" onclick=\"return add_time(this);\">Setup</a> - WiFi Web - ");
   }
 
   if (c_len) {
-    size_t treeResvd = webhead.length()+c_len;
     c_tree = (char*)bm_malloc(webhead.length()+c_len+webpage.length()+1);
 
+    if (!c_tree) {
+      String webfoot = webpage;
+      webpage = webhead;
+      webpage += F("<p>(Folder too big)</p>\n");
+      webpage += webfoot;
+    }
+  }
+
+  if (c_tree) {
+    size_t treeResvd = webhead.length()+c_len;
     strcpy(c_tree, webhead.c_str());
     c_len = webhead.length();
     webhead = "";
@@ -2241,7 +2310,7 @@ void doConfirmButton(AsyncWebServerRequest *request, String press, String ask) {
     return;
 
   String webpage = "";
-  webpage += F(header);
+  webpage += header;
 
       webpage += F("<hr>Do you want to ");
       webpage += ask;
@@ -2252,7 +2321,7 @@ void doConfirmButton(AsyncWebServerRequest *request, String press, String ask) {
       webpage += F("';\">Yes</button>");
 
   webpage += F("<button class='buttons' onclick='window.history.back();'>No</button>");
-  webpage += F(footer);
+  webpage += footer;
   request->send(200, "text/html", webpage);
 }
 
@@ -2261,7 +2330,7 @@ void doButton(AsyncWebServerRequest *request) {
     return;
 
   String webpage = "";
-  webpage += F(header);
+  webpage += header;
   String press = "";
   String sure = "";
   bool doRestart = false;
@@ -2325,8 +2394,8 @@ void doButton(AsyncWebServerRequest *request) {
   }
 
   webpage += F("<br><button class='buttons' onclick=\"location.href='/';\">OK</button>");
-  webpage += F(goback_script);
-  webpage += F(footer);
+  webpage += goback_script;
+  webpage += footer;
   request->send(200, "text/html", webpage);
 
   if (doRestart) {
@@ -2508,7 +2577,11 @@ bool sd_init() {
   Serial.print("Initializing SD card...");
   MG.lcd.println("Initializing SD card...");
 
+#ifdef ESP32
   if (!SD.begin()) {
+#else
+  if (!SD.begin(SD_CS_PIN)) {
+#endif
     MG.lcd.println("Card Mount Failed");
     Serial.println("Card Mount Failed");
     return false;
@@ -2516,6 +2589,7 @@ bool sd_init() {
 
   FillMemInfo(&memboot);
 
+#ifdef ESP32
   uint8_t cardType = SD.cardType();
 
   if (cardType == CARD_NONE) {
@@ -2542,6 +2616,7 @@ bool sd_init() {
   uint64_t cardSize = SD.cardSize() / (1024 * 1024);
   Serial.printf("SD Card Size: %lluMB\n", cardSize);
   MG.lcd.printf("SD Card Size: %lluMB\n", cardSize);
+#endif //ESP32
 
   MG.lcd.println(" ");
   Serial.println();
@@ -2552,12 +2627,16 @@ bool sd_init() {
 void printLocalTime()
 {
   struct tm timeinfo;
+  char buffer[40];
+
   if(!getLocalTime(&timeinfo)){
     Serial.println("Failed to obtain time");
     return;
   }
-  Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
-  GO.lcd.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
+
+  strftime(buffer, 40, "%A, %B %d %Y %H:%M:%S", &timeinfo);
+  Serial.println(buffer);
+  GO.lcd.println(buffer);
 }
 
 void wifiweb_info() {

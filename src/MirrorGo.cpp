@@ -2,12 +2,26 @@
 #include "MirrorGo.h"
 
 void CGoMirror::begin(unsigned long baud) {
+#ifdef HAVE_GO
     GO.begin(baud);
+
+#else
+    // UART
+    Serial.begin(baud);
+
+    Serial.flush();
+    Serial.print("MirrorGo initializing...");
+
+    SPI.begin();
+
+    Serial.println("OK");
+#endif
 
     Speaker.begin();
     lcd.begin();
     battery.begin();
 
+#ifdef HAVE_GO
     BtnA.btn = &GO.BtnA;
     BtnB.btn = &GO.BtnB;
     BtnMenu.btn = &GO.BtnMenu;
@@ -16,6 +30,7 @@ void CGoMirror::begin(unsigned long baud) {
     BtnStart.btn = &GO.BtnStart;
     JOY_Y.btn = &GO.JOY_Y;
     JOY_X.btn = &GO.JOY_X;
+#endif
 
     led.begin();
 }
@@ -26,7 +41,9 @@ void CGoMirror::update() {
         wifiweb->handleClient();
 */
 
+#ifdef HAVE_GO
     GO.update();
+#endif
     
     //Button update
     BtnA.read();

@@ -16,7 +16,22 @@
 // #include <WProgram.h>
 // #endif
 
+#ifdef ESP32
 #include <utility/Button.h>
+#define HAVE_BUTTON
+#else
+#define Button void
+
+#define BUTTON_A_PIN 32
+#define BUTTON_B_PIN 33
+
+#define BUTTON_MENU 13
+#define BUTTON_SELECT 27
+#define BUTTON_VOLUME 0
+#define BUTTON_START 39
+#define BUTTON_JOY_Y 35
+#define BUTTON_JOY_X 34
+#endif
 
 
 #define DPAD_V_FULL 2
