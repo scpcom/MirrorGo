@@ -80,6 +80,8 @@ IPAddress WifiAPMask = IPAddress(255, 255, 255, 0);
 String WifiSSID = "";
 String WifiPSK = "";
 
+uint8_t WifiIPMode = 2;
+
 IPAddress WifiIP = IPAddress(0, 0, 0, 0);
 IPAddress WifiGW = WifiAPIP;
 IPAddress WifiMask = IPAddress(255, 255, 255, 0);
@@ -107,6 +109,8 @@ IPAddress NewWifiAPMask = IPAddress(255, 255, 255, 0);
 
 String NewWifiSSID = "";
 String NewWifiPSK = "";
+
+uint8_t NewWifiIPMode = 0xFF;
 
 IPAddress NewWifiIP = IPAddress(0, 0, 0, 0);
 IPAddress NewWifiGW = NewWifiIP;
@@ -1229,6 +1233,68 @@ bool GetWifiData() {
   return true;
 }
 
+bool GetWifiIPData(String SSID) {
+  String path = "/WIFIIP-";
+
+  path += SSID;
+  path += ".TXT";
+
+  Serial.print("Reading file: ");
+  Serial.println(path);
+  File wifiIPFile = SD.open(path);
+
+  if (!wifiIPFile) {
+    Serial.println("Failed to open file for reading");
+    return false;
+  } else if (!wifiIPFile.available()) {
+    Serial.println("Empty file");
+    return false;
+  } else {
+    Serial.println("Read from file: ");
+    while (wifiIPFile.available()) {
+      String WifiIPValue   = WifiIP.toString();
+      String WifiMaskValue = WifiMask.toString();
+      String WifiGWValue   = WifiGW.toString();
+      String WifiDNS1Value = WifiDNS1.toString();
+      String WifiDNS2Value = WifiDNS2.toString();
+
+      if (wifiIPFile.available()) {
+        WifiIPValue = wifiIPFile.readStringUntil('\n');
+        WifiIPValue.replace("\r", "");
+        WifiGWValue = "0.0.0.0";
+      }
+      if (wifiIPFile.available()) {
+        WifiMaskValue = wifiIPFile.readStringUntil('\n');
+        WifiMaskValue.replace("\r", "");
+      }
+      if (wifiIPFile.available()) {
+        WifiGWValue = wifiIPFile.readStringUntil('\n');
+        WifiGWValue.replace("\r", "");
+      }
+
+      if (wifiIPFile.available()) {
+        WifiDNS1Value = wifiIPFile.readStringUntil('\n');
+        WifiDNS1Value.replace("\r", "");
+      }
+      if (wifiIPFile.available()) {
+        WifiDNS2Value = wifiIPFile.readStringUntil('\n');
+        WifiDNS2Value.replace("\r", "");
+      }
+
+      WifiIP.fromString(WifiIPValue);
+      WifiMask.fromString(WifiMaskValue);
+      WifiGW.fromString(WifiGWValue);
+      WifiDNS1.fromString(WifiDNS1Value);
+      WifiDNS2.fromString(WifiDNS2Value);
+
+      break;
+    }
+    wifiIPFile.close();
+  }
+
+  return true;
+}
+
 void GetNewWifiWebMode() {
   if (NewWifiWebMode == 0xFF) {
     NewWifiWebMode = WifiWebMode;
@@ -1239,13 +1305,6 @@ void GetNewWifiWebMode() {
     else if (NewWifiWebMode == 2) {
       NewWifiSSID = WifiSSID;
       NewWifiPSK  = WifiPSK;
-    }
-  }
-  if (NewIPMode == 0xFF) {
-    if (NewWifiWebMode == 2) {
-      NewIPMode = 2;
-    } else {
-      NewIPMode = 1;
     }
   }
 
@@ -1267,6 +1326,18 @@ void GetNewWifiWebMode() {
 
     NewWifiSSID = WifiSSID;
     NewWifiPSK  = WifiPSK;
+  }
+
+  if (NewWifiIPMode == 0xFF) {
+    NewWifiIPMode = WifiIPMode;
+  }
+
+  if (NewIPMode == 0xFF) {
+    if (NewWifiWebMode == 2) {
+      NewIPMode = NewWifiIPMode;
+    } else {
+      NewIPMode = 1;
+    }
   }
 
   if (NewWifiAPIP == IPAddress(0, 0, 0, 0)) {
@@ -1366,6 +1437,10 @@ void handleSysSetup(AsyncWebServerRequest *request) {
   webpage += NewWifiDNS2.toString();
   webpage += F("\";\n");
 
+  webpage += F("var WifiIPMode = ");
+  webpage += String(NewWifiIPMode);
+  webpage += F(";\n");
+
   webpage += F("function updateWifi(m)\n");
   webpage += F("{\n");
   webpage += F("    var editssid = document.getElementById('wifissid');\n");
@@ -1378,6 +1453,11 @@ void handleSysSetup(AsyncWebServerRequest *request) {
   webpage += F("    var editdns1 = document.getElementById('wifidns1');\n");
   webpage += F("    var editdns2 = document.getElementById('wifidns2');\n");
   webpage += F("    var ipmode = 0;\n");
+  webpage += F("    if (editstatic.checked) {\n");
+  webpage += F("      ipmode = 1;\n");
+  webpage += F("    } else if (editdhcp.checked) {\n");
+  webpage += F("      ipmode = 2;\n");
+  webpage += F("    }\n");
   webpage += F("    if (WifiWebMode == 1) {\n");
   webpage += F("        WifiAPSSID = editssid.value;\n");
   webpage += F("        WifiAPPSK  = editpsk.value;\n");
@@ -1392,7 +1472,9 @@ void handleSysSetup(AsyncWebServerRequest *request) {
   webpage += F("        WifiGW     = editgw.value;\n");
   webpage += F("        WifiDNS1   = editdns1.value;\n");
   webpage += F("        WifiDNS2   = editdns2.value;\n");
+  webpage += F("        WifiIPMode = ipmode;\n");
   webpage += F("    }\n");
+  webpage += F("    ipmode = 0;\n");
   webpage += F("    if (m == 1) {\n");
   webpage += F("        editssid.value = WifiAPSSID;\n");
   webpage += F("        editpsk.value  = WifiAPPSK;\n");
@@ -1410,7 +1492,7 @@ void handleSysSetup(AsyncWebServerRequest *request) {
   webpage += F("        editgw.value   = WifiGW;\n");
   webpage += F("        editdns1.value = WifiDNS1;\n");
   webpage += F("        editdns2.value = WifiDNS2;\n");
-  webpage += F("        ipmode = 2;\n");
+  webpage += F("        ipmode = WifiIPMode;\n");
   webpage += F("    } else {\n");
   webpage += F("        editssid.value = \"\"\n");
   webpage += F("        editpsk.value  = \"\";\n");
@@ -1914,6 +1996,16 @@ void doSaveSetup(AsyncWebServerRequest *request) {
         NewWifiWebMode = wifimode;
         NewWifiSSID = wifissid;
         NewWifiPSK = wifipsk;
+        NewWifiIPMode = 2;
+      }
+
+      if (ipmode == 1) {
+        NewWifiIPMode = ipmode;
+        NewWifiIP   = wifiip;
+        NewWifiMask = wifimask;
+        NewWifiGW   = wifigw;
+        NewWifiDNS1 = wifidns1;
+        NewWifiDNS2 = wifidns2;
       }
     } else if (wifimode == 0) {
       NewWifiWebMode = wifimode;
@@ -2761,6 +2853,40 @@ bool LoadWifiWebMode() {
   return ret;
 }
 
+bool SaveWifiIPData(String SSID) {
+  bool ret = false;
+  String path = "/WIFIIP-";
+
+  path += SSID;
+  path += ".TXT";
+
+  if (NewWifiIPMode == 1) {
+      Serial.print("Writing file: ");
+      Serial.println(path);
+
+      File wifiIPFile = SD.open(path, FILE_WRITE);
+      if (!wifiIPFile) {
+          Serial.println("Failed to open file for writing");
+      } else {
+          wifiIPFile.println(NewWifiIP.toString());
+          wifiIPFile.println(NewWifiMask.toString());
+          wifiIPFile.println(NewWifiGW.toString());
+          wifiIPFile.println(NewWifiDNS1.toString());
+          wifiIPFile.println(NewWifiDNS2.toString());
+
+          ret = true;
+
+          wifiIPFile.close();
+      }
+  } else {
+      if (SD.exists(path)) {
+          SD.remove(path);
+      }
+  }
+
+  return ret;
+}
+
 bool SaveWifiWebMode() {
   bool ret = false;
 
@@ -2833,6 +2959,8 @@ bool SaveWifiWebMode() {
 
           wifiFile.close();
         }
+
+      SaveWifiIPData(NewWifiSSID);
   }
 
       path = "/WIFIWEB.TXT";
@@ -3243,6 +3371,12 @@ bool wifi_init(bool interactive) {
       if (WiFi.status() != WL_CONNECTED) {
         WifiWebMode = 0;
         return false;
+      }
+
+      WifiIPMode = 2;
+      if (GetWifiIPData(WifiSSID)) {
+        WifiIPMode = 1;
+        WiFi.config(WifiIP, WifiGW, WifiMask, WifiDNS1, WifiDNS2);
       }
 
       WifiIP = WiFi.localIP();
