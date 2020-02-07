@@ -1733,15 +1733,6 @@ void handleSysSetup(AsyncWebServerRequest *request) {
   webpage += F(">\n");
   webpage += F("  <label for=\"webfiledisabled\"> Disabled</label>\n");
 /*
-  webpage += F("  <br>\n");
-  webpage += F("  Mode:\n");
-  webpage += F("  <input type=\"checkbox\" id=\"webfilereadonly\" name=\"webfilereadonly\" value=\"1\"");
-  if (webfileReadonly)
-    webpage += F(" checked=\"checked\"");
-  webpage += F(">\n");
-  webpage += F("  <label for=\"webfilereadonly\"> Read Only</label>\n");
-*/
-/*
   webpage += F("  <input type=\"checkbox\" id=\"webrcautorefresh\" name=\"webrcautorefresh\" value=\"1\"");
   if (webrcAutoRefresh)
     webpage += F(" checked=\"checked\"");
@@ -1937,7 +1928,6 @@ void doSaveSetup(AsyncWebServerRequest *request) {
   String webpass = "";
   String action = "";
   int8_t webfilemode = -1;
-  bool isReadonly = false;
   bool doAutoRefresh = false;
   String new_ntpServer1 = ntpServer1;
   String new_ntpServer2 = ntpServer2;
@@ -1988,11 +1978,6 @@ void doSaveSetup(AsyncWebServerRequest *request) {
     else if (request->argName(i) == "webfilemode") {
       webfilemode = request->arg(i).toInt();
     }
-/*
-    else if (request->argName(i) == "webfilereadonly") {
-      isReadonly = request->arg(i).toInt();
-    }
-*/
     else if (request->argName(i) == "webrcautorefresh") {
       doAutoRefresh = request->arg(i).toInt();
     }
@@ -2096,10 +2081,11 @@ void doSaveSetup(AsyncWebServerRequest *request) {
       WifiWebPass = webpass;
     }
 
-    webfileDisabled = (webfilemode == 0);
-    webfileReadonly = ((webfilemode == 1) || webfileDisabled);
+    if (webfilemode >= 0) {
+      webfileDisabled = (webfilemode == 0);
+      webfileReadonly = ((webfilemode == 1) || webfileDisabled);
+    }
 
-    //webfileReadonly = isReadonly;
     webrcAutoRefresh = doAutoRefresh;
 
     if ((new_ntpServer1 != ntpServer1) ||
