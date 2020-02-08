@@ -2,6 +2,7 @@
 #define _WiFiWeb_H_
 
 #include <Arduino.h>
+#include <bm_alloc.h>
 
 extern bool sd_init();
 

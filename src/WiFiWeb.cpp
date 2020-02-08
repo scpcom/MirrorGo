@@ -27,22 +27,6 @@
 #include <DNSServer.h>
 
 
-#ifdef ESP32
-#ifdef BOARD_HAS_PSRAM
-#define ESP32_WITH_PSRAM
-#endif
-#endif
-
-#ifdef ESP32_WITH_PSRAM
-#define bm_check_integrity(print_errors) heap_caps_check_integrity(MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT, print_errors)
-#define bm_malloc(size) heap_caps_malloc(size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT)
-#define bm_free(p) heap_caps_free(p)
-#else
-inline bool bm_check_integrity(bool print_errors) { return true; }
-#define bm_malloc(size) malloc(size)
-#define bm_free(p) free(p)
-#endif
-
 #ifdef ESP8266
 #define WIFI_AUTH_OPEN		ENC_TYPE_NONE
 #define WIFI_AUTH_WEP		ENC_TYPE_WEP

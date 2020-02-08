@@ -24,6 +24,7 @@
 #include "SPI.h"
 #include <Print.h>
 #include <pgmspace.h>
+#include <bm_alloc.h>
 
 #ifdef ESP32
 #include "utility/Display.h"
@@ -32,12 +33,6 @@
 #define ILI9341 void
 #endif
 #include "bmpheader.h"
-
-#ifdef ESP32
-#define bm_malloc(size) heap_caps_malloc(size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT)
-#else
-#define bm_malloc(size) malloc(size)
-#endif
 
 typedef struct {
   char FileHeader[BITMAP_FILEHEADER_SIZE];
