@@ -28,6 +28,12 @@
 
 
 #ifdef ESP32
+#ifdef BOARD_HAS_PSRAM
+#define ESP32_WITH_PSRAM
+#endif
+#endif
+
+#ifdef ESP32_WITH_PSRAM
 #define bm_check_integrity(print_errors) heap_caps_check_integrity(MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT, print_errors)
 #define bm_malloc(size) heap_caps_malloc(size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT)
 #define bm_free(p) heap_caps_free(p)
@@ -994,7 +1000,7 @@ void FillMemInfo(MemInfo* mi) {
 
   mi->Flash.MaxAlloc = 0;
 
-#ifdef ESP32
+#ifdef ESP32_WITH_PSRAM
   mi->Psram.Size = ESP.getPsramSize();
 
   mi->Psram.Free = ESP.getFreePsram();
@@ -2634,10 +2640,12 @@ void handleRoot(AsyncWebServerRequest *request) {
 
     FillMemInfo(&memnow);
   
+#ifdef ESP32_WITH_PSRAM
     Serial.print("MaxAlloc: ");
     Serial.print((int32_t)memnow.Psram.MaxAlloc);
     Serial.print(" Free: ");
     Serial.println((int32_t)memnow.Psram.Free);
+#endif
     while (true) {
       File entry =  dir.openNextFile();
 
@@ -2676,10 +2684,12 @@ void handleRoot(AsyncWebServerRequest *request) {
 
     Serial.print("Tree: ");
     Serial.print(c_len);
+#ifdef ESP32_WITH_PSRAM
     Serial.print(" MaxAlloc: ");
     Serial.print((int32_t)memnow.Psram.MaxAlloc);
     Serial.print(" Free: ");
     Serial.println((int32_t)memnow.Psram.Free);
+#endif
 
   String webpage = "";
 
