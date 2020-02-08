@@ -1926,7 +1926,7 @@ int16_t LCDMirror::drawChar(unsigned int uniCode, int x, int y, int font) {
   {
     if ((font > 2) && (font < 9)) {
       // This is slower than above but is more convenient for the RLE fonts
-      flash_address = pgm_read_dword(pgm_read_dword(&(fontdata[font].chartbl)) +
+      flash_address = pgm_read_dword((void *)pgm_read_dword(&(fontdata[font].chartbl)) +
                                      uniCode * sizeof(void *));
       width = pgm_read_byte(
           (uint8_t *)pgm_read_dword(&(fontdata[font].widthtbl)) + uniCode);
@@ -2780,7 +2780,11 @@ void LCDMirror::mirror_drawJpgFile(fs::FS &fs, const char *path, uint16_t x, uin
     return;
   }
 
+#ifdef ESP32
   File file = fs.open(path, FILE_READ);
+#else
+  File file = fs.open(path, "r");
+#endif
   if (!file) {
     log_e("Failed to open file for reading");
     return;

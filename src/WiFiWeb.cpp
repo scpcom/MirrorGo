@@ -37,6 +37,14 @@ inline bool bm_check_integrity(bool print_errors) { return true; }
 #define bm_free(p) free(p)
 #endif
 
+#ifdef ESP8266
+#define WIFI_AUTH_OPEN		ENC_TYPE_NONE
+#define WIFI_AUTH_WEP		ENC_TYPE_WEP
+#define WIFI_AUTH_WPA_PSK	ENC_TYPE_TKIP
+#define WIFI_AUTH_WPA2_PSK	ENC_TYPE_CCMP
+#define WIFI_AUTH_WPA_WPA2_PSK	ENC_TYPE_AUTO
+#endif
+
 
 typedef struct {
   int64_t Size;
@@ -126,9 +134,6 @@ IPAddress NewWifiDNS2 = IPAddress(0, 0, 0, 0);
 
 uint8_t NewWifiWebMode = 0xFF;
 uint8_t NewIPMode = NewWifiWebMode;
-
-uint32_t fileReadMax = 4*1024*1024;
-uint8_t *fileReadBuf = NULL;
 
 MemInfo memboot;
 
@@ -963,9 +968,19 @@ String htmlDetailsColumn(int64_t value, String text = "") {
 }
 
 void FillMemInfo(MemInfo* mi) {
+#ifdef ESP32
   mi->SDcard.Size = SD.cardSize();
 
   mi->SDcard.Free = SD.totalBytes()-SD.usedBytes();
+#elif defined(ESP8266)
+  mi->SDcard.Size = SD.size64();
+
+  mi->SDcard.Free = 0;
+#else
+  mi->SDcard.Size = SD.size();
+
+  mi->SDcard.Free = 0;
+#endif
 
   mi->SDcard.MinFree = 0;
 
@@ -1860,9 +1875,11 @@ void handleSysSetup(AsyncWebServerRequest *request) {
       case WIFI_AUTH_WPA_WPA2_PSK:     /**< authenticate mode : WPA_WPA2_PSK */
         webpage += F("WPA/WPA2 PSK");
         break;
+#ifdef ESP32
       case WIFI_AUTH_WPA2_ENTERPRISE:  /**< authenticate mode : WPA2_ENTERPRISE */
         webpage += F("WPA2 Enterprise");
         break;
+#endif
       default:
         break;
     }
