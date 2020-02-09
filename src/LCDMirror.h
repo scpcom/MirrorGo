@@ -633,6 +633,7 @@ public:
   //inline uint8_t *GetBitmapBuf(){ while (true) { if (!_locked) return (uint8_t*)mirror_bitmap; } }
   inline uint8_t *GetBitmapBuf(){ return (uint8_t*)mirror_bitmap; }
   inline size_t GetBitmapSize(){ return mirror_size; }
+  inline uint32_t GetBitmapHeight(){ return mirror_height; }
   void     Save(void);
 
 private:
@@ -715,6 +716,7 @@ private:
 
   RGB565_BITMAP* mirror_bitmap;
   size_t mirror_size;
+  uint32_t mirror_height;
   int32_t mirror_x0, mirror_y0, mirror_x1, mirror_y1;
   int32_t mirror_cx, mirror_cy;
 };

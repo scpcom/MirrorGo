@@ -12,9 +12,9 @@
   The larger fonts are Run Length Encoded to reduce their
   size.
 
-  Requires ESP chip with 150kb SPIRAM
+  Requires ESP chip with minimum 150kb SPIRAM free
   (You can change this by replacing the 
-  bm_malloc macro in LCDMirror.h)
+  bm_malloc macro in bm_alloc.h)
 
   Created by Bodmer 2/12/16
   Bodmer: Added RPi 16 bit display support
@@ -149,13 +149,38 @@ void LCDMirror::init(void) {
   setRotation(_lcd->getRotation());
 #endif
   
-  mirror_size = BITMAP_FILEHEADER_SIZE+BITMAP_HEADER_SIZE+(_width*_height*2);
+  mirror_height = _height;
+  mirror_size = BITMAP_FILEHEADER_SIZE+BITMAP_HEADER_SIZE+(_width*mirror_height*2);
+
+  int8_t step = mirror_height/2;
+  while ((mirror_size > bm_max_alloc()) && (mirror_height > step)) {
+    mirror_height -= step;
+    mirror_size = BITMAP_FILEHEADER_SIZE+BITMAP_HEADER_SIZE+(_width*mirror_height*2);
+
+    if (mirror_height <= 2) {
+      break;
+    } else if (mirror_height <= step) {
+      step /= 2;
+    }
+  }
+
+  Serial.print("Allocating ");
+  Serial.print(mirror_size);
+  Serial.println(" bytes for bitmap");
+
   mirror_bitmap = (RGB565_BITMAP*)bm_malloc(mirror_size);
 
-  if (!mirror_bitmap)
-    return;
+  Serial.print(bm_max_alloc());
+  Serial.println(" bytes max_alloc for next");
 
-  bitmap_fill_header(mirror_bitmap->FileHeader, mirror_bitmap->Header, _width, _height, 16);
+  if (!mirror_bitmap) {
+    mirror_height = 0;
+    mirror_size = 0;
+    Serial.println("Failed!");
+    return;
+  }
+
+  bitmap_fill_header(mirror_bitmap->FileHeader, mirror_bitmap->Header, _width, mirror_height, 16);
 }
 
 /***************************************************************************************
@@ -3137,7 +3162,9 @@ void LCDMirror::mirror_writeFast(uint16_t data)
 
     mirror_co += mirror_cx;
 
-    mirror_bitmap->Pixels[mirror_co] = data;
+    if (_height-mirror_cy-1 < mirror_height) {
+        mirror_bitmap->Pixels[mirror_co] = data;
+    }
 }
 
 void LCDMirror::mirror_write16(uint16_t data)
@@ -3147,7 +3174,9 @@ void LCDMirror::mirror_write16(uint16_t data)
 
     mirror_co += mirror_cx;
 
-    mirror_bitmap->Pixels[mirror_co] = data;
+    if (_height-mirror_cy-1 < mirror_height) {
+        mirror_bitmap->Pixels[mirror_co] = data;
+    }
   /*} else {
     Serial.printf("Out of screen %dx%d\n", mirror_cx, mirror_cy);
   }*/

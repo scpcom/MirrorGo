@@ -304,101 +304,108 @@ const char* goback_script = "<script>\n"
                       "}, false)\n"
                       "</script>\n";
 
-const char* settings_script = ""
+const char* setwifi_script = ""
                       "function updateWifi(m)\n"
                       "{\n"
-                      "    var editssid = document.getElementById('wifissid');\n"
-                      "    var editpsk  = document.getElementById('wifipsk');\n"
-                      "    var editstatic = document.getElementById('ipstatic');\n"
-                      "    var editdhcp   = document.getElementById('ipdhcp');\n"
-                      "    var editip   = document.getElementById('wifiip');\n"
-                      "    var editmask = document.getElementById('wifimask');\n"
-                      "    var editgw   = document.getElementById('wifigw');\n"
-                      "    var editdns1 = document.getElementById('wifidns1');\n"
-                      "    var editdns2 = document.getElementById('wifidns2');\n"
-                      "    var edithost = document.getElementById('wifihost');\n"
+                      "    var essid = document.getElementById('wifissid');\n"
+                      "    var epsk  = document.getElementById('wifipsk');\n"
+                      "    var estat = document.getElementById('ipstatic');\n"
+                      "    var edhcp = document.getElementById('ipdhcp');\n"
+                      "    var eip   = document.getElementById('wifiip');\n"
+                      "    var emask = document.getElementById('wifimask');\n"
+                      "    var egw   = document.getElementById('wifigw');\n"
+                      "    var edns1 = document.getElementById('wifidns1');\n"
+                      "    var edns2 = document.getElementById('wifidns2');\n"
+                      "    var ehost = document.getElementById('wifihost');\n"
                       "    var ipmode = 0;\n"
-                      "    if (editstatic.checked) {\n"
+                      "    if (estat.checked) {\n"
                       "      ipmode = 1;\n"
-                      "    } else if (editdhcp.checked) {\n"
+                      "    } else if (edhcp.checked) {\n"
                       "      ipmode = 2;\n"
                       "    }\n"
                       "    if (WifiWebMode == 1) {\n"
-                      "        WifiAPSSID = editssid.value;\n"
-                      "        WifiAPPSK  = editpsk.value;\n"
-                      "        WifiAPIP   = editip.value;\n"
-                      "        WifiAPMask = editmask.value;\n"
-                      "        WifiAPGW   = editgw.value;\n"
-                      "        WifiAPHost = edithost.value;\n"
+                      "        WifiAPSSID = essid.value;\n"
+                      "        WifiAPPSK  = epsk.value;\n"
+                      "        WifiAPIP   = eip.value;\n"
+                      "        WifiAPMask = emask.value;\n"
+                      "        WifiAPGW   = egw.value;\n"
+                      "        WifiAPHost = ehost.value;\n"
                       "    } else if (WifiWebMode == 2) {\n"
-                      "        WifiSSID   = editssid.value;\n"
-                      "        WifiPSK    = editpsk.value;\n"
-                      "        WifiIP     = editip.value;\n"
-                      "        WifiMask   = editmask.value;\n"
-                      "        WifiGW     = editgw.value;\n"
-                      "        WifiDNS1   = editdns1.value;\n"
-                      "        WifiDNS2   = editdns2.value;\n"
-                      "        WifiHost   = edithost.value;\n"
+                      "        WifiSSID   = essid.value;\n"
+                      "        WifiPSK    = epsk.value;\n"
+                      "        WifiIP     = eip.value;\n"
+                      "        WifiMask   = emask.value;\n"
+                      "        WifiGW     = egw.value;\n"
+                      "        WifiDNS1   = edns1.value;\n"
+                      "        WifiDNS2   = edns2.value;\n"
+                      "        WifiHost   = ehost.value;\n"
                       "        WifiIPMode = ipmode;\n"
                       "    }\n"
                       "    ipmode = 0;\n"
                       "    if (m == 1) {\n"
-                      "        editssid.value = WifiAPSSID;\n"
-                      "        editpsk.value  = WifiAPPSK;\n"
-                      "        editip.value   = WifiAPIP;\n"
-                      "        editmask.value = WifiAPMask;\n"
-                      "        editgw.value   = WifiAPGW;\n"
-                      "        editdns1.value = WifiAPIP;\n"
-                      "        editdns2.value = \"\";\n"
-                      "        edithost.value = WifiAPHost;\n"
+                      "        essid.value = WifiAPSSID;\n"
+                      "        epsk.value  = WifiAPPSK;\n"
+                      "        eip.value   = WifiAPIP;\n"
+                      "        emask.value = WifiAPMask;\n"
+                      "        egw.value   = WifiAPGW;\n"
+                      "        edns1.value = WifiAPIP;\n"
+                      "        edns2.value = \"\";\n"
+                      "        ehost.value = WifiAPHost;\n"
                       "        ipmode = 1;\n"
                       "    } else if (m == 2) {\n"
-                      "        editssid.value = WifiSSID;\n"
-                      "        editpsk.value  = WifiPSK;\n"
-                      "        editip.value   = WifiIP;\n"
-                      "        editmask.value = WifiMask;\n"
-                      "        editgw.value   = WifiGW;\n"
-                      "        editdns1.value = WifiDNS1;\n"
-                      "        editdns2.value = WifiDNS2;\n"
-                      "        edithost.value = WifiHost;\n"
+                      "        essid.value = WifiSSID;\n"
+                      "        epsk.value  = WifiPSK;\n"
+                      "        eip.value   = WifiIP;\n"
+                      "        emask.value = WifiMask;\n"
+                      "        egw.value   = WifiGW;\n"
+                      "        edns1.value = WifiDNS1;\n"
+                      "        edns2.value = WifiDNS2;\n"
+                      "        ehost.value = WifiHost;\n"
                       "        ipmode = WifiIPMode;\n"
                       "    } else {\n"
-                      "        editssid.value = \"\"\n"
-                      "        editpsk.value  = \"\";\n"
-                      "        editip.value   = \"\";\n"
-                      "        editmask.value = \"\";\n"
-                      "        editgw.value   = \"\";\n"
-                      "        editdns1.value = \"\";\n"
-                      "        editdns2.value = \"\";\n"
-                      "        edithost.value = \"\";\n"
+                      "        essid.value = \"\"\n"
+                      "        epsk.value  = \"\";\n"
+                      "        eip.value   = \"\";\n"
+                      "        emask.value = \"\";\n"
+                      "        egw.value   = \"\";\n"
+                      "        edns1.value = \"\";\n"
+                      "        edns2.value = \"\";\n"
+                      "        ehost.value = \"\";\n"
                       "    }\n"
                       "    WifiWebMode = m;\n"
-                      "    editssid.disabled   = (WifiWebMode == 0);\n"
-                      "    editpsk.disabled    = (WifiWebMode == 0);\n"
-                      "    editstatic.disabled = (WifiWebMode == 0);\n"
-                      "    editdhcp.disabled   = (WifiWebMode == 0);\n"
-                      "    edithost.disabled   = (WifiWebMode == 0);\n"
-                      "    editstatic.checked = (ipmode == 1);\n"
-                      "    editdhcp.checked   = (ipmode == 2);\n"
+                      "    essid.disabled = (WifiWebMode == 0);\n"
+                      "    epsk.disabled  = (WifiWebMode == 0);\n"
+                      "    estat.disabled = (WifiWebMode == 0);\n"
+                      "    edhcp.disabled = (WifiWebMode == 0);\n"
+                      "    ehost.disabled = (WifiWebMode == 0);\n"
+                      "    estat.checked = (ipmode == 1);\n"
+                      "    edhcp.checked = (ipmode == 2);\n"
                       "    updateIP(ipmode);\n"
                       "}\n"
                       "function updateIP(m)\n"
                       "{\n"
-                      "    var editip   = document.getElementById('wifiip');\n"
-                      "    var editmask = document.getElementById('wifimask');\n"
-                      "    var editgw   = document.getElementById('wifigw');\n"
-                      "    var editdns1 = document.getElementById('wifidns1');\n"
-                      "    var editdns2 = document.getElementById('wifidns2');\n"
-                      "    editip.disabled   = (m != 1);\n"
-                      "    editmask.disabled = (m != 1);\n"
-                      "    editgw.disabled   = (m != 1);\n"
-                      "    editdns1.disabled = (m != 1);\n"
-                      "    editdns2.disabled = (m != 1);\n"
+                      "    var eip   = document.getElementById('wifiip');\n"
+                      "    var emask = document.getElementById('wifimask');\n"
+                      "    var egw   = document.getElementById('wifigw');\n"
+                      "    var edns1 = document.getElementById('wifidns1');\n"
+                      "    var edns2 = document.getElementById('wifidns2');\n"
+                      "    eip.disabled   = (m != 1);\n"
+                      "    emask.disabled = (m != 1);\n"
+                      "    egw.disabled   = (m != 1);\n"
+                      "    edns1.disabled = (m != 1);\n"
+                      "    edns2.disabled = (m != 1);\n"
                       "}\n"
                       "function updateSSID(l) {\n"
                       "  var t,a=document.getElementById(\"wntbody\"),r=a.rows;\n"
                       "  var e=document.getElementById(\"wifissid\");\n"
                       "  e.value=r[l].cells[0].innerHTML;\n"
+                      "}\n";
+
+const char* settings_script = ""
+                      "function add_time(link)\n"
+                      "{\n"
+                      "  location.href=link.href + '&time=' + new Date().getTime();\n"
+                      "  return false;\n"
                       "}\n"
                       "function updateTime() {\n"
                       "  var ti = document.getElementById('time');\n"
@@ -1212,14 +1219,14 @@ void handleSysInfo(AsyncWebServerRequest *request) {
   webpage += F("<script>\n");
   webpage += F("function add_time(link)\n");
   webpage += F("{\n");
-  webpage += F("  location.href=link.href + '?time=' + new Date().getTime();\n");
+  webpage += F("  location.href=link.href + '&time=' + new Date().getTime();\n");
   webpage += F("  return false;\n");
   webpage += F("}\n");
   webpage += F("</script>\n");
 
   webpage += footer;
 
-  webpage.replace("WiFi Web - ", "<a href=\"/\">Home</a> - <a href=\"/syssetup\" onclick=\"return add_time(this);\">Setup</a> - WiFi Web - ");
+  webpage.replace("WiFi Web - ", "<a href=\"/\">Home</a> - <a href=\"/syssetup?page=7\" onclick=\"return add_time(this);\">Setup</a> - WiFi Web - ");
 
   request->send(200, "text/html", webpage);
 }
@@ -1513,87 +1520,19 @@ IPAddress calculateCIDRSubnet(uint8_t CIDR) {
 	return IPAddress(mask);
 }
 
-void handleSysSetup(AsyncWebServerRequest *request) {
-  bool needRestart = false;
+String htmlWifi(uint8_t settingsPage) {
   String webpage = "";
 
-  if (!handleLogin(request))
-    return;
+  webpage += F("<p>");
+  webpage += F("WiFi:");
 
-  GetNewWifiWebMode();
-
-  for (uint8_t i = 0; i < request->args(); i++) {
-    if (request->argName(i) == "time") {
-      browserTime = getBrowserTime(request->arg(i));
-    }
+  if (settingsPage == 1) {
+    webpage += F("<a href=\"/syssetup?page=2\" onclick=\"return add_time(this);\">Web</a>\n");
+    webpage += F("<a href=\"/syssetup?page=4\" onclick=\"return add_time(this);\">Time</a>\n");
   }
 
-  webpage += header;
-  webpage.replace("Web FileBrowser", "System Setup");
+  webpage += F("</p>\n");
 
-  webpage += F("<script>\n");
-  webpage += F("var WifiWebMode = ");
-  webpage += String(NewWifiWebMode);
-  webpage += F(";\n");
-
-  webpage += F("var WifiAPSSID = \"");
-  webpage += NewWifiAPSSID;
-  webpage += F("\";\n");
-  webpage += F("var WifiAPPSK = \"");
-  webpage += F("\";\n");
-
-  webpage += F("var WifiAPIP = \"");
-  webpage += NewWifiAPIP.toString();
-  webpage += F("\";\n");
-  webpage += F("var WifiAPMask = \"");
-  webpage += NewWifiAPMask.toString();
-  webpage += F("\";\n");
-  webpage += F("var WifiAPGW = \"");
-  webpage += NewWifiAPGW.toString();
-  webpage += F("\";\n");
-
-  webpage += F("var WifiAPHost = \"");
-  webpage += NewWifiAPHost;
-  webpage += F("\";\n");
-
-  webpage += F("var WifiSSID = \"");
-  webpage += NewWifiSSID;
-  webpage += F("\";\n");
-  webpage += F("var WifiPSK = \"");
-  webpage += F("\";\n");
-
-  webpage += F("var WifiIP = \"");
-  webpage += NewWifiIP.toString();
-  webpage += F("\";\n");
-  webpage += F("var WifiMask = \"");
-  webpage += NewWifiMask.toString();
-  webpage += F("\";\n");
-  webpage += F("var WifiGW = \"");
-  webpage += NewWifiGW.toString();
-  webpage += F("\";\n");
-
-  webpage += F("var WifiDNS1 = \"");
-  webpage += NewWifiDNS1.toString();
-  webpage += F("\";\n");
-  webpage += F("var WifiDNS2 = \"");
-  webpage += NewWifiDNS2.toString();
-  webpage += F("\";\n");
-
-  webpage += F("var WifiHost = \"");
-  webpage += NewWifiHost;
-  webpage += F("\";\n");
-
-  webpage += F("var WifiIPMode = ");
-  webpage += String(NewWifiIPMode);
-  webpage += F(";\n");
-
-  webpage += settings_script;
-
-  webpage += F("</script>\n");
-
-  webpage += F("<form action='/syssetup' method='post' enctype='multipart/form-data'>\n");
-
-  webpage += F("<p>WiFi:</p>\n");
   webpage += F("<fieldset>\n");
 
   webpage += F("  Mode:\n");
@@ -1705,9 +1644,25 @@ void handleSysSetup(AsyncWebServerRequest *request) {
   webpage += F("\">\n");
 
   webpage += F("</fieldset>\n");
-  webpage += F("\n");
 
-  webpage += F("<p>Web:</p>\n");
+  return webpage;
+}
+
+String htmlWebFile(uint8_t settingsPage) {
+  String webpage = "";
+
+  webpage += F("<p>");
+
+  if (settingsPage == 2) {
+    webpage += F("<a href=\"/syssetup?page=1\" onclick=\"return add_time(this);\">WiFi</a>\n");
+  }
+  webpage += F("Web:");
+  if (settingsPage == 2) {
+    webpage += F("<a href=\"/syssetup?page=4\" onclick=\"return add_time(this);\">Time</a>\n");
+  }
+
+  webpage += F("</p>\n");
+
   webpage += F("<fieldset>\n");
 
   webpage += F("  <label for=\"webuser\">Username: </label>\n");
@@ -1746,7 +1701,22 @@ void handleSysSetup(AsyncWebServerRequest *request) {
 */
   webpage += F("</fieldset>\n");
 
-  webpage += F("<p>Time:</p>\n");
+  return webpage;
+}
+
+String htmlTime(uint8_t settingsPage) {
+  String webpage = "";
+
+  webpage += F("<p>");
+
+  if (settingsPage == 4) {
+    webpage += F("<a href=\"/syssetup?page=1\" onclick=\"return add_time(this);\">WiFi</a>\n");
+    webpage += F("<a href=\"/syssetup?page=2\" onclick=\"return add_time(this);\">Web</a>\n");
+  }
+  webpage += F("Time:");
+
+  webpage += F("</p>\n");
+
   webpage += F("<fieldset>\n");
 
   webpage += F("  Current local time: ");
@@ -1758,7 +1728,6 @@ void handleSysSetup(AsyncWebServerRequest *request) {
     webpage += getBrowserTimeString();
     webpage += F("  <br>\n");
   }
-  webpage += F("  <input name=\"time\" id=\"time\" type=\"hidden\">\n");
   webpage += F("  <br>\n");
 
   webpage += F("  <label for=\"ntpserver1\">NTP Server 1: </label>\n");
@@ -1790,34 +1759,15 @@ void handleSysSetup(AsyncWebServerRequest *request) {
 
   webpage += F("  <button class='buttons' onclick='return updateQuorum();' name='quorum'>Quorum</button>\n");
 
-  webpage += F("  </fieldset>\n");
+  webpage += F("</fieldset>\n");
 
-  webpage += F("<br>\n");
-  webpage += F("<button class='buttons' type='submit' onclick='updateTime();' name='action' value='Apply'>Apply</button>\n");
-  webpage += F("<button class='buttons' type='submit' onclick='updateTime();' name='action' value='Save'>Save</button>\n");
-  if (browserTime) {
-    webpage += F("<button class='buttons' type='submit' onclick='updateTime();' name='action' value='Sync'>Sync Time</button>\n");
-  }
+  return webpage;
+}
 
-  webpage += F("</form>\n");
+String htmlWiFiNeighbours(uint8_t settingsPage) {
+  String webpage = "";
 
-  if (NewWifiWebMode != WifiWebMode) {
-    needRestart = true;
-  } else if (NewWifiWebMode == 1) {
-    if ((NewWifiAPSSID != WifiAPSSID) || (NewWifiAPPSK != WifiAPPSK)) {
-      needRestart = true;
-    }
-  } else if (NewWifiWebMode == 2) {
-    if ((NewWifiSSID != WifiSSID) || (NewWifiPSK != WifiPSK)) {
-      needRestart = true;
-    }
-  }
-
-  if (needRestart) {
-    webpage += F("  <p>You need to restart device to apply settings.</p>\n");
-  }
-
-  webpage += F("  <p>WiFi Neighbours:</p>\n");
+  webpage += F("<p>WiFi Neighbours:</p>\n");
   webpage += F("<table>\n");
 
   webpage += F("<thead>\n");
@@ -1834,6 +1784,7 @@ void handleSysSetup(AsyncWebServerRequest *request) {
   webpage += F("<tbody id=\"wntbody\">");
 
   int16_t count = WiFi.scanNetworks();
+
   for (int16_t i = 0; i < count; i++) {
     webpage += F("<tr>");
 
@@ -1900,6 +1851,158 @@ void handleSysSetup(AsyncWebServerRequest *request) {
 
   webpage += F("</table>\n");
 
+  return webpage;
+}
+
+void handleSysSetup(AsyncWebServerRequest *request) {
+  MemInfo memnow;
+  bool needRestart = false;
+  String webpage = "";
+  uint8_t settingsPage = 7;
+
+  if (!handleLogin(request))
+    return;
+
+  FillMemInfo(&memnow);
+
+  GetNewWifiWebMode();
+
+  for (uint8_t i = 0; i < request->args(); i++) {
+    if (request->argName(i) == "time") {
+      browserTime = getBrowserTime(request->arg(i));
+    }
+    else if (request->argName(i) == "page") {
+      settingsPage = request->arg(i).toInt();
+    }
+  }
+
+  if ((settingsPage == 7) && (memnow.Heap.MaxAlloc < 49152)) {
+    settingsPage = 1;
+  }
+
+    Serial.print("settingsPage: ");
+    Serial.println(settingsPage);
+
+  webpage = "";
+  webpage += header;
+
+  webpage.replace("Web FileBrowser", "System Setup");
+
+  webpage += F("<script>\n");
+  webpage += F("var WifiWebMode = ");
+  webpage += String(NewWifiWebMode);
+  webpage += F(";\n");
+
+  webpage += F("var WifiAPSSID = \"");
+  webpage += NewWifiAPSSID;
+  webpage += F("\";\n");
+  webpage += F("var WifiAPPSK = \"");
+  webpage += F("\";\n");
+
+  webpage += F("var WifiAPIP = \"");
+  webpage += NewWifiAPIP.toString();
+  webpage += F("\";\n");
+  webpage += F("var WifiAPMask = \"");
+  webpage += NewWifiAPMask.toString();
+  webpage += F("\";\n");
+  webpage += F("var WifiAPGW = \"");
+  webpage += NewWifiAPGW.toString();
+  webpage += F("\";\n");
+
+  webpage += F("var WifiAPHost = \"");
+  webpage += NewWifiAPHost;
+  webpage += F("\";\n");
+
+  webpage += F("var WifiSSID = \"");
+  webpage += NewWifiSSID;
+  webpage += F("\";\n");
+  webpage += F("var WifiPSK = \"");
+  webpage += F("\";\n");
+
+  webpage += F("var WifiIP = \"");
+  webpage += NewWifiIP.toString();
+  webpage += F("\";\n");
+  webpage += F("var WifiMask = \"");
+  webpage += NewWifiMask.toString();
+  webpage += F("\";\n");
+  webpage += F("var WifiGW = \"");
+  webpage += NewWifiGW.toString();
+  webpage += F("\";\n");
+
+  webpage += F("var WifiDNS1 = \"");
+  webpage += NewWifiDNS1.toString();
+  webpage += F("\";\n");
+  webpage += F("var WifiDNS2 = \"");
+  webpage += NewWifiDNS2.toString();
+  webpage += F("\";\n");
+
+  webpage += F("var WifiHost = \"");
+  webpage += NewWifiHost;
+  webpage += F("\";\n");
+
+  webpage += F("var WifiIPMode = ");
+  webpage += String(NewWifiIPMode);
+  webpage += F(";\n");
+
+  if (settingsPage & 1) {
+    webpage += setwifi_script;
+  }
+
+  webpage += settings_script;
+
+  webpage += F("</script>\n");
+
+  webpage += F("<form action='/syssetup' method='post' enctype='multipart/form-data'>\n");
+
+  webpage += F("<input name=\"page\" id=\"page\" type=\"hidden\" value=\"");
+  webpage += settingsPage;
+  webpage += F("\">\n");
+
+  webpage += F("<br>\n");
+  webpage += F("<input name=\"time\" id=\"time\" type=\"hidden\">\n");
+
+  if (settingsPage & 1) {
+    webpage += htmlWifi(settingsPage);
+  }
+
+  if (settingsPage & 2) {
+    webpage += htmlWebFile(settingsPage);
+  }
+
+  if (settingsPage & 4) {
+    webpage += htmlTime(settingsPage);
+  }
+
+  webpage += F("<br>");
+
+  webpage += F("<button class='buttons' type='submit' onclick='updateTime();' name='action' value='Apply'>Apply</button>\n");
+  webpage += F("<button class='buttons' type='submit' onclick='updateTime();' name='action' value='Save'>Save</button>\n");
+  if ((browserTime) && (settingsPage & 4)) {
+    webpage += F("<button class='buttons' type='submit' onclick='updateTime();' name='action' value='Sync'>Sync Time</button>\n");
+  }
+
+  webpage += F("</form>\n");
+
+  if (NewWifiWebMode != WifiWebMode) {
+    needRestart = true;
+  } else if (NewWifiWebMode == 1) {
+    if ((NewWifiAPSSID != WifiAPSSID) || (NewWifiAPPSK != WifiAPPSK)) {
+      needRestart = true;
+    }
+  } else if (NewWifiWebMode == 2) {
+    if ((NewWifiSSID != WifiSSID) || (NewWifiPSK != WifiPSK)) {
+      needRestart = true;
+    }
+  }
+
+  if (needRestart) {
+    webpage += F("  <p>You need to restart device to apply settings.</p>\n");
+  }
+
+  if ((settingsPage & 1) && (memnow.Heap.MaxAlloc >= 49152)) {
+    webpage += htmlWiFiNeighbours(settingsPage);
+  }
+
   webpage += F("<script>\n");
 
   webpage += F("updateWifi(");
@@ -1909,6 +2012,11 @@ void handleSysSetup(AsyncWebServerRequest *request) {
   webpage += F("</script>\n");
 
   webpage += footer;
+
+  Serial.print("Page: ");
+  Serial.print(webpage.length());
+  Serial.print(" MaxAlloc: ");
+  Serial.println(bm_max_alloc());
 
   webpage.replace("WiFi Web - ", "<a href=\"/sysinfo\">System Information</a> - <a href=\"/\">Home</a> - WiFi Web - ");
 
@@ -1935,7 +2043,7 @@ void doSaveSetup(AsyncWebServerRequest *request) {
   String webpass = "";
   String action = "";
   int8_t webfilemode = -1;
-  bool doAutoRefresh = false;
+  bool doAutoRefresh = webrcAutoRefresh;
   String new_ntpServer1 = ntpServer1;
   String new_ntpServer2 = ntpServer2;
   String new_ntpServer3 = ntpServer3;
@@ -2364,7 +2472,11 @@ void handleConsole(AsyncWebServerRequest *request) {
       //tree += F("<img id=\"screen-shot\" src=\"");
       tree += F("<img id=\"screen-shot\" src=\"data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7\" data-src=\"");
       tree += entryPath;
-      tree += F("\" alt=\"\"  width=\"320\" height=\"240\">");
+      tree += F("\" alt=\"\"  width=\"");
+      tree += 320;
+      tree += F("\" height=\"");
+      tree += MG.lcd.GetBitmapHeight();
+      tree += F("\">");
 
       tree += F("<tr>");
       tree += F("<td data-value=\"");
@@ -2551,14 +2663,14 @@ void handleConsole(AsyncWebServerRequest *request) {
   webpage += F("<script>\n");
   webpage += F("function add_time(link)\n");
   webpage += F("{\n");
-  webpage += F("  location.href=link.href + '?time=' + new Date().getTime();\n");
+  webpage += F("  location.href=link.href + '&time=' + new Date().getTime();\n");
   webpage += F("  return false;\n");
   webpage += F("}\n");
   webpage += F("</script>\n");
 
   webpage += footer;
 
-  webpage.replace("WiFi Web - ", "<a href=\"/sysinfo\">System Information</a> - <a href=\"/syssetup\" onclick=\"return add_time(this);\">Setup</a> - WiFi Web - ");
+  webpage.replace("WiFi Web - ", "<a href=\"/sysinfo\">System Information</a> - <a href=\"/syssetup?page=7\" onclick=\"return add_time(this);\">Setup</a> - WiFi Web - ");
 
   request->send(200, "text/html", webpage);
 }
@@ -2668,11 +2780,13 @@ void handleRoot(AsyncWebServerRequest *request) {
 
     Serial.print("Tree: ");
     Serial.print(c_len);
-#ifdef ESP32_WITH_PSRAM
     Serial.print(" MaxAlloc: ");
+#ifdef ESP32_WITH_PSRAM
     Serial.print((int32_t)memnow.Psram.MaxAlloc);
     Serial.print(" Free: ");
     Serial.println((int32_t)memnow.Psram.Free);
+#else
+    Serial.println(bm_max_alloc());
 #endif
 
   String webpage = "";
@@ -2780,18 +2894,23 @@ void handleRoot(AsyncWebServerRequest *request) {
 
   webpage += footer_script;
 
-  webpage += F("<script>\n");
-  webpage += F("function add_time(link)\n");
-  webpage += F("{\n");
-  webpage += F("  location.href=link.href + '?time=' + new Date().getTime();\n");
-  webpage += F("  return false;\n");
-  webpage += F("}\n");
-  webpage += F("</script>\n");
-
   webpage += footer;
 
   if (c_len) {
-    c_tree = (char*)bm_malloc(webhead.length()+c_len+webpage.length()+1);
+    size_t w_len = webhead.length()+webpage.length()+1;
+
+    if (w_len > bm_max_alloc()) {
+      w_len = 0;
+      c_len = 0;
+    } else if (w_len+c_len > bm_max_alloc()) {
+      c_len = bm_max_alloc()-w_len;
+    }
+
+    w_len = w_len+c_len;
+
+    if (w_len) {
+      c_tree = (char*)bm_malloc(w_len);
+    }
 
     if (!c_tree) {
       String webfoot = webpage;
@@ -3425,7 +3544,7 @@ bool wifi_init(bool interactive) {
         Serial.println("DNS responder started");
         GO.lcd.println("DNS responder started");
         Serial.print("You can connect via http://");
-        GO.lcd.println(FQDN);
+        Serial.println(FQDN);
         GO.lcd.print("You can connect via http://");
         GO.lcd.println(FQDN);
       }
@@ -3554,7 +3673,7 @@ bool wifi_init(bool interactive) {
         Serial.println("MDNS responder started");
         GO.lcd.println("MDNS responder started");
         Serial.print("You can connect via http://");
-        GO.lcd.println(FQDN);
+        Serial.println(FQDN);
         GO.lcd.print("You can connect via http://");
         GO.lcd.println(FQDN);
       }

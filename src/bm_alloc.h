@@ -17,4 +17,14 @@ inline bool bm_check_integrity(bool print_errors) { return true; }
 #define bm_free(p) free(p)
 #endif
 
+#ifdef ESP32_WITH_PSRAM
+inline size_t bm_max_alloc() { return ESP.getMaxAllocPsram(); }
+#elif defined(ESP32)
+inline size_t bm_max_alloc() { return ESP.getMaxAllocHeap(); }
+#elif defined(ESP8266)
+inline size_t bm_max_alloc() { return ESP.getMaxFreeBlockSize(); }
+#else
+inline size_t bm_max_alloc() { return 0; }
+#endif
+
 #endif
